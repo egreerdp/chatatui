@@ -6,6 +6,10 @@ import (
 
 type Model struct{}
 
+func NewModel() *Model {
+	return &Model{}
+}
+
 func (m Model) Init() tea.Cmd {
 	return nil
 }
