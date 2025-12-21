@@ -7,6 +7,8 @@ import (
 	"fmt"
 	"os"
 
+	tea "github.com/charmbracelet/bubbletea"
+	"github.com/egreerdp/chatatui/internal/client/ui"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 )
@@ -18,8 +20,18 @@ var rootCmd = &cobra.Command{
 	Short: "A TUI based real time chat app",
 	Long:  ``,
 	Run: func(cmd *cobra.Command, args []string) {
-		// TODO:
-		// - Call the TUI element
+		if len(os.Getenv("DEBUG")) > 0 {
+			f, err := tea.LogToFile("debug.log", "debug")
+			if err != nil {
+				fmt.Println("fatal:", err)
+				os.Exit(1)
+			}
+			defer func() { _ = f.Close() }()
+		}
+
+		if _, err := tea.NewProgram(ui.NewModel(), tea.WithAltScreen()).Run(); err != nil {
+			panic(err)
+		}
 	},
 }
 
