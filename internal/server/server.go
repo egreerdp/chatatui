@@ -1,9 +1,15 @@
 package server
 
-type ChatServer struct{}
+import "github.com/egreerdp/chatatui/internal/server/api"
 
-func NewChatServer() *ChatServer {
-	return &ChatServer{}
+type ChatServer struct {
+	handler *api.Handler
+}
+
+func NewChatServer(h *api.Handler) *ChatServer {
+	return &ChatServer{
+		handler: h,
+	}
 }
 
 func (cs *ChatServer) Start() error {
