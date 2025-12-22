@@ -2,8 +2,8 @@ package api
 
 import (
 	"github.com/egreerdp/chatatui/internal/server/hub"
-	"github.com/go-chi/chi/middleware"
 	"github.com/go-chi/chi/v5"
+	"github.com/go-chi/chi/v5/middleware"
 )
 
 type Handler struct {
@@ -23,8 +23,10 @@ func NewHandler(hub *hub.Hub) *Handler {
 	}
 }
 
-func (h *Handler) Routes() {
+func (h *Handler) Routes() chi.Router {
 	ws := NewWSHandler(h.Hub)
 
 	h.Router.Get("/ws", ws.Handle)
+
+	return h.Router
 }

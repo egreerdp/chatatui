@@ -1,7 +1,14 @@
 package cmd
 
 import (
+	"context"
+	"errors"
 	"log"
+	"net/http"
+	"os"
+	"os/signal"
+	"syscall"
+	"time"
 
 	"github.com/egreerdp/chatatui/internal/server"
 	"github.com/egreerdp/chatatui/internal/server/api"
@@ -18,11 +25,27 @@ var serveCmd = &cobra.Command{
 		handler := api.NewHandler(h)
 		srv := server.NewChatServer(handler, ":8080")
 
-		log.Println("Server started")
-		err := srv.Start()
+		go func() {
+			log.Println("running...")
+			err := srv.Start()
+			if err != nil && !errors.Is(err, http.ErrServerClosed) {
+				panic(err)
+			}
+		}()
+
+		quit := make(chan os.Signal, 1)
+		signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM)
+		<-quit
+
+		ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+		defer cancel()
+
+		err := srv.Stop(ctx)
 		if err != nil {
 			panic(err)
 		}
+
+		log.Println("stopped")
 	},
 }
 

@@ -2,7 +2,6 @@ package server
 
 import (
 	"context"
-	"log"
 	"net/http"
 
 	"github.com/egreerdp/chatatui/internal/server/api"
@@ -24,16 +23,15 @@ func NewChatServer(h *api.Handler, addr string) *ChatServer {
 func (cs *ChatServer) Start() error {
 	cs.srv = &http.Server{
 		Addr:    cs.addr,
-		Handler: cs.handler.Router,
+		Handler: cs.handler.Routes(),
 	}
 
-	log.Println("listen and serve")
 	return cs.srv.ListenAndServe()
 }
 
-func (cs *ChatServer) Stop() error {
+func (cs *ChatServer) Stop(ctx context.Context) error {
 	if cs.srv != nil {
-		return cs.srv.Shutdown(context.Background())
+		return cs.srv.Shutdown(ctx)
 	}
 
 	return nil
