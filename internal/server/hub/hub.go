@@ -8,25 +8,25 @@ import (
 )
 
 type Hub struct {
-	clients map[*websocket.Conn]bool
-	mu      sync.RWMutex
+	rooms map[uint]*Room
+	mu    sync.RWMutex
 }
 
 func NewHub() *Hub {
 	return &Hub{
-		clients: make(map[*websocket.Conn]bool),
+		rooms: make(map[uint]*Room),
 	}
 }
 
-func (h *Hub) Add(conn *websocket.Conn) {
+func (h *Hub) Add(room *Room) {
 	h.mu.Lock()
-	h.clients[conn] = true
+	h.rooms[uint(room.ID)] = room
 	h.mu.Unlock()
 }
 
-func (h *Hub) Remove(conn *websocket.Conn) {
+func (h *Hub) Remove(roomID int) {
 	h.mu.Lock()
-	delete(h.clients, conn)
+	delete(h.rooms, uint(roomID))
 	h.mu.Unlock()
 }
 
@@ -34,7 +34,9 @@ func (h *Hub) Broadcast(ctx context.Context, msg []byte) {
 	h.mu.Lock()
 	defer h.mu.Unlock()
 
-	for conn := range h.clients {
-		_ = conn.Write(ctx, websocket.MessageText, msg)
+	for _, room := range h.rooms {
+		for conn := range room.clients {
+			_ = conn.Write(ctx, websocket.MessageText, msg)
+		}
 	}
 }
