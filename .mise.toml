@@ -1,3 +1,15 @@
 [env]
 ENV = "development"
 DEBUG = 0
+
+[tools]
+"npm:wscat" = "latest"
+
+[tasks.build]
+run = "go build -o ./bin/chatatui ."
+description = "build the application binary"
+
+[tasks.dev]
+run = "./bin/chatatui"
+description = "run the build binary"
+depends = "build"

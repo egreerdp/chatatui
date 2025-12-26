@@ -5,16 +5,18 @@ import (
 	"sync"
 
 	"github.com/coder/websocket"
+	"github.com/google/uuid"
 )
 
 type Room struct {
-	ID      uint
+	ID      uuid.UUID
 	clients map[*websocket.Conn]bool
 	mu      sync.RWMutex
 }
 
 func NewRoom() *Room {
 	return &Room{
+		ID:      uuid.New(),
 		clients: make(map[*websocket.Conn]bool),
 	}
 }

@@ -26,7 +26,7 @@ func NewHandler(hub *hub.Hub) *Handler {
 func (h *Handler) Routes() chi.Router {
 	ws := NewWSHandler(h.Hub)
 
-	h.Router.Get("/ws", ws.Handle)
+	h.Router.Get("/ws/{roomID}", ws.Handle)
 
 	return h.Router
 }
