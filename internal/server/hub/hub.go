@@ -1,11 +1,9 @@
 package hub
 
 import (
-	"context"
 	"fmt"
 	"sync"
 
-	"github.com/coder/websocket"
 	"github.com/google/uuid"
 )
 
@@ -61,13 +59,11 @@ func (h *Hub) Remove(roomID uuid.UUID) {
 	h.mu.Unlock()
 }
 
-func (h *Hub) Broadcast(ctx context.Context, msg []byte) {
-	h.mu.Lock()
-	defer h.mu.Unlock()
+func (h *Hub) Broadcast(msg []byte, sender *Client) {
+	h.mu.RLock()
+	defer h.mu.RUnlock()
 
 	for _, room := range h.Rooms {
-		for conn := range room.clients {
-			_ = conn.Write(ctx, websocket.MessageText, msg)
-		}
+		room.Broadcast(msg, sender)
 	}
 }

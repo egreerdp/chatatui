@@ -32,31 +32,26 @@ func (h *WSHandler) Handle(w http.ResponseWriter, r *http.Request) {
 	roomID := chi.URLParam(r, "roomID")
 	if roomID == "" {
 		http.Error(w, "room required", http.StatusBadRequest)
-		log.Println("roomID:", roomID)
-		log.Println("URL:", r.URL)
 		return
 	}
 
-	conn, err := websocket.Accept(w, r, nil)
+	conn, err := websocket.Accept(w, r, &websocket.AcceptOptions{})
 	if err != nil {
+		log.Println("err:", err)
 		return
 	}
 	defer func() { _ = conn.CloseNow() }()
 
+	client := hub.NewClient(conn, roomID)
+
 	room, err := h.hub.GetOrCreateRoom(roomID)
 	if err != nil {
-		log.Println("get or create room")
+		_ = conn.Close(websocket.StatusInternalError, "failed to join room")
 		return
 	}
 
-	room.Add(conn)
-	defer room.Remove(conn)
+	room.Add(client)
+	defer room.Remove(client)
 
-	for {
-		_, data, err := conn.Read(r.Context())
-		if err != nil {
-			return
-		}
-		room.Broadcast(r.Context(), data)
-	}
+	client.Run(room)
 }
