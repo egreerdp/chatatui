@@ -24,7 +24,7 @@ func (c *Client) Run(room *Room) {
 	ctx, cancel := context.WithCancel(context.Background())
 
 	go c.writePump(ctx)
-	c.readPump(ctx, room)
+	c.readPump(ctx, room) // blocking
 	cancel()
 }
 

@@ -37,8 +37,10 @@ func (r *Room) Broadcast(msg []byte, sender *Client) {
 	defer r.mu.RUnlock()
 
 	for client := range r.clients {
-		if client != sender {
-			client.Send(msg)
+		if client == sender {
+			continue
 		}
+
+		client.Send(msg)
 	}
 }
