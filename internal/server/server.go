@@ -4,6 +4,7 @@ import (
 	"context"
 	"net/http"
 
+	"github.com/egreerdp/chatatui/internal/repository"
 	"github.com/egreerdp/chatatui/internal/server/api"
 )
 
@@ -11,12 +12,14 @@ type ChatServer struct {
 	handler *api.Handler
 	srv     *http.Server
 	addr    string
+	db      *repository.SQLiteDB
 }
 
-func NewChatServer(h *api.Handler, addr string) *ChatServer {
+func NewChatServer(h *api.Handler, addr string, db *repository.SQLiteDB) *ChatServer {
 	return &ChatServer{
 		handler: h,
 		addr:    addr,
+		db:      db,
 	}
 }
 

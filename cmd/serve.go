@@ -10,6 +10,7 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/egreerdp/chatatui/internal/repository"
 	"github.com/egreerdp/chatatui/internal/server"
 	"github.com/egreerdp/chatatui/internal/server/api"
 	"github.com/egreerdp/chatatui/internal/server/hub"
@@ -21,9 +22,9 @@ var serveCmd = &cobra.Command{
 	Short: "Start the serve",
 	Long:  ``,
 	Run: func(cmd *cobra.Command, args []string) {
-		h := hub.NewHub()
-		handler := api.NewHandler(h)
-		srv := server.NewChatServer(handler, ":8080")
+		handler := api.NewHandler(hub.NewHub())
+		database := repository.NewSQLiteDB("chatatui.db")
+		srv := server.NewChatServer(handler, ":8080", database)
 
 		go func() {
 			log.Println("running...")
