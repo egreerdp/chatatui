@@ -7,22 +7,14 @@ import (
 	"github.com/google/uuid"
 )
 
-const defaultRoomID = "aa8c0638-0cfc-4f84-8519-f2bc88474efc"
-
 type Hub struct {
 	Rooms map[uuid.UUID]*Room
 	mu    sync.RWMutex
 }
 
 func NewHub() *Hub {
-	defaultRoom := NewRoom()
-	defaultRoom.ID = uuid.MustParse(defaultRoomID)
-
-	rooms := make(map[uuid.UUID]*Room)
-	rooms[defaultRoom.ID] = defaultRoom
-
 	return &Hub{
-		Rooms: rooms,
+		Rooms: make(map[uuid.UUID]*Room),
 	}
 }
 

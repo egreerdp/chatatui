@@ -22,8 +22,8 @@ var serveCmd = &cobra.Command{
 	Short: "Start the serve",
 	Long:  ``,
 	Run: func(cmd *cobra.Command, args []string) {
-		handler := api.NewHandler(hub.NewHub())
 		database := repository.NewSQLiteDB("chatatui.db")
+		handler := api.NewHandler(hub.NewHub(), database)
 		srv := server.NewChatServer(handler, ":8080", database)
 
 		go func() {

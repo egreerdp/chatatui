@@ -2,33 +2,39 @@ package hub
 
 import (
 	"context"
+	"log"
 
 	"github.com/coder/websocket"
+	"github.com/egreerdp/chatatui/internal/repository"
 )
 
 type Client struct {
-	conn   *websocket.Conn
-	roomID string
-	send   chan []byte
+	conn     *websocket.Conn
+	roomID   string
+	send     chan []byte
+	UserID   uint
+	DBRoomID uint
 }
 
-func NewClient(conn *websocket.Conn, roomID string) *Client {
+func NewClient(conn *websocket.Conn, roomID string, userID, dbRoomID uint) *Client {
 	return &Client{
-		conn:   conn,
-		roomID: roomID,
-		send:   make(chan []byte, 256),
+		conn:     conn,
+		roomID:   roomID,
+		send:     make(chan []byte, 256),
+		UserID:   userID,
+		DBRoomID: dbRoomID,
 	}
 }
 
-func (c *Client) Run(room *Room) {
+func (c *Client) Run(room *Room, msgRepo *repository.MessageRepository) {
 	ctx, cancel := context.WithCancel(context.Background())
 
 	go c.writePump(ctx)
-	c.readPump(ctx, room) // blocking
+	c.readPump(ctx, room, msgRepo) // blocking
 	cancel()
 }
 
-func (c *Client) readPump(ctx context.Context, room *Room) {
+func (c *Client) readPump(ctx context.Context, room *Room, msgRepo *repository.MessageRepository) {
 	defer func() { _ = c.conn.CloseNow() }()
 
 	for {
@@ -36,6 +42,17 @@ func (c *Client) readPump(ctx context.Context, room *Room) {
 		if err != nil {
 			return
 		}
+
+		// Persist the message
+		msg := &repository.Message{
+			Content:  data,
+			SenderID: c.UserID,
+			RoomID:   c.DBRoomID,
+		}
+		if err := msgRepo.Create(msg); err != nil {
+			log.Println("failed to persist message:", err)
+		}
+
 		room.Broadcast(data, c)
 	}
 }

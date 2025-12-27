@@ -5,9 +5,9 @@ testdata_dir = "testdata"
 tmp_dir = "tmp"
 
 [build]
-args_bin = []
+args_bin = ["serve"]
 bin = "./bin/chatatui"
-cmd = "mise run dev serve"
+cmd = "go build -o ./bin/chatatui ."
 delay = 1000
 exclude_dir = ["assets", "tmp", "vendor", "testdata"]
 exclude_file = []
