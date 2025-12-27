@@ -14,15 +14,17 @@ type Client struct {
 	send     chan []byte
 	UserID   uint
 	DBRoomID uint
+	Username string
 }
 
-func NewClient(conn *websocket.Conn, roomID string, userID, dbRoomID uint) *Client {
+func NewClient(conn *websocket.Conn, roomID string, userID, dbRoomID uint, username string) *Client {
 	return &Client{
 		conn:     conn,
 		roomID:   roomID,
 		send:     make(chan []byte, 256),
 		UserID:   userID,
 		DBRoomID: dbRoomID,
+		Username: username,
 	}
 }
 
@@ -76,7 +78,22 @@ func (c *Client) writePump(ctx context.Context) {
 
 func (c *Client) Send(msg []byte) {
 	select {
+	case c.send <- c.FormatMessageText(msg):
+	default:
+	}
+}
+
+func (c *Client) SendRaw(msg []byte) {
+	select {
 	case c.send <- msg:
 	default:
 	}
+}
+
+func (c *Client) FormatMessageText(msg []byte) []byte {
+	return FormatMessageWithAuthor(msg, c.Username)
+}
+
+func FormatMessageWithAuthor(msg []byte, author string) []byte {
+	return []byte(author + ": " + string(msg))
 }

@@ -68,12 +68,11 @@ func (h *WSHandler) Handle(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Add user as room member
 	if err := h.db.Rooms().AddMember(dbRoom.ID, dbUser.ID); err != nil {
 		log.Println("failed to add room member:", err)
 	}
 
-	client := hub.NewClient(conn, roomID, dbUser.ID, dbRoom.ID)
+	client := hub.NewClient(conn, roomID, dbUser.ID, dbRoom.ID, dbUser.Name)
 
 	room, err := h.hub.GetOrCreateRoom(roomID)
 	if err != nil {
@@ -84,7 +83,6 @@ func (h *WSHandler) Handle(w http.ResponseWriter, r *http.Request) {
 	room.Add(client)
 	defer room.Remove(client)
 
-	// Send message history to the client
 	h.sendHistory(client, dbRoom.ID)
 
 	client.Run(room, h.db.Messages())
@@ -99,6 +97,7 @@ func (h *WSHandler) sendHistory(client *hub.Client, roomID uint) {
 
 	// Send messages in chronological order (oldest first)
 	for i := len(messages) - 1; i >= 0; i-- {
-		client.Send(messages[i].Content)
+		formatted := hub.FormatMessageWithAuthor(messages[i].Content, messages[i].Sender.Name)
+		client.SendRaw(formatted)
 	}
 }
