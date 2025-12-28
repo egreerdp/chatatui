@@ -36,11 +36,13 @@ func (r *Room) Broadcast(msg []byte, sender *Client) {
 	r.mu.RLock()
 	defer r.mu.RUnlock()
 
+	formatted := FormatMessageWithAuthor(msg, sender.Username)
+
 	for client := range r.clients {
 		if client == sender {
 			continue
 		}
 
-		client.Send(msg)
+		client.SendRaw(formatted)
 	}
 }
