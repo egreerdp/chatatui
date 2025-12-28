@@ -7,9 +7,10 @@ import (
 
 type User struct {
 	gorm.Model
-	UUID  uuid.UUID `gorm:"type:uuid;uniqueIndex"`
-	Name  string
-	Rooms []Room `gorm:"many2many:room_members;"`
+	UUID   uuid.UUID `gorm:"type:uuid;uniqueIndex"`
+	Name   string
+	APIKey string `gorm:"uniqueIndex"`
+	Rooms  []Room `gorm:"many2many:room_members;"`
 }
 
 type UserRepository struct {
@@ -27,15 +28,9 @@ func (r *UserRepository) Create(user *User) error {
 	return r.db.Create(user).Error
 }
 
-func (r *UserRepository) GetByID(id uint) (*User, error) {
+func (r *UserRepository) GetByAPIKey(apiKey string) (*User, error) {
 	var user User
-	err := r.db.Preload("Rooms").First(&user, id).Error
-	return &user, err
-}
-
-func (r *UserRepository) GetByUUID(uid uuid.UUID) (*User, error) {
-	var user User
-	err := r.db.Preload("Rooms").Where("uuid = ?", uid).First(&user).Error
+	err := r.db.Where("api_key = ?", apiKey).First(&user).Error
 	return &user, err
 }
 

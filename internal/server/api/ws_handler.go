@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/coder/websocket"
+	"github.com/egreerdp/chatatui/internal/middleware"
 	"github.com/egreerdp/chatatui/internal/repository"
 	"github.com/egreerdp/chatatui/internal/server/hub"
 	"github.com/go-chi/chi/v5"
@@ -47,7 +48,6 @@ func (h *WSHandler) Handle(w http.ResponseWriter, r *http.Request) {
 
 	dbRoom, err := h.db.Rooms().GetOrCreateByUUID(roomUUID)
 	if err != nil {
-		log.Println("GetOrCreateRoomByUUID: err:", err)
 		http.Error(w, "failed to get room", http.StatusInternalServerError)
 		return
 	}
@@ -59,20 +59,7 @@ func (h *WSHandler) Handle(w http.ResponseWriter, r *http.Request) {
 	}
 	defer func() { _ = conn.CloseNow() }()
 
-	userUUID := uuid.New()
-	userName := "anonymous"
-	dbUser, err := h.db.Users().GetOrCreateByUUID(userUUID, userName)
-	if err != nil {
-		log.Println("failed to create user:", err)
-		_ = conn.Close(websocket.StatusInternalError, "failed to create user")
-		return
-	}
-
-	if err := h.db.Rooms().AddMember(dbRoom.ID, dbUser.ID); err != nil {
-		log.Println("failed to add room member:", err)
-	}
-
-	client := hub.NewClient(conn, roomID, dbUser.ID, dbRoom.ID, dbUser.Name)
+	user := middleware.UserFromContext(r.Context())
 
 	room, err := h.hub.GetOrCreateRoom(roomID)
 	if err != nil {
@@ -80,6 +67,11 @@ func (h *WSHandler) Handle(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	if err := h.db.Rooms().AddMember(dbRoom.ID, user.ID); err != nil {
+		log.Println("failed to add room member:", err)
+	}
+
+	client := hub.NewClient(conn, roomID, user.ID, dbRoom.ID, user.Name)
 	room.Add(client)
 	defer room.Remove(client)
 

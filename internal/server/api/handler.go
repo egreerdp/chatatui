@@ -1,10 +1,11 @@
 package api
 
 import (
+	"github.com/egreerdp/chatatui/internal/middleware"
 	"github.com/egreerdp/chatatui/internal/repository"
 	"github.com/egreerdp/chatatui/internal/server/hub"
 	"github.com/go-chi/chi/v5"
-	"github.com/go-chi/chi/v5/middleware"
+	chimw "github.com/go-chi/chi/v5/middleware"
 )
 
 type Handler struct {
@@ -15,9 +16,9 @@ type Handler struct {
 
 func NewHandler(hub *hub.Hub, db *repository.SQLiteDB) *Handler {
 	r := chi.NewRouter()
-	r.Use(middleware.Logger)
-	r.Use(middleware.Recoverer)
-	r.Use(middleware.Heartbeat("/up"))
+	r.Use(chimw.Logger)
+	r.Use(chimw.Recoverer)
+	r.Use(chimw.Heartbeat("/up"))
 
 	return &Handler{
 		Router: r,
@@ -28,8 +29,14 @@ func NewHandler(hub *hub.Hub, db *repository.SQLiteDB) *Handler {
 
 func (h *Handler) Routes() chi.Router {
 	ws := NewWSHandler(h.Hub, h.DB)
+	register := NewRegisterHandler(h.DB)
 
-	h.Router.Get("/ws/{roomID}", ws.Handle)
+	h.Router.Post("/register", register.Handle)
+
+	h.Router.Route("/ws", func(r chi.Router) {
+		r.Use(middleware.APIKeyAuth(h.DB.Users()))
+		r.Get("/{roomID}", ws.Handle)
+	})
 
 	return h.Router
 }
