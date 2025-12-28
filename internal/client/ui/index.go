@@ -130,6 +130,10 @@ func (m *Model) listenForMessages() tea.Cmd {
 
 		_, data, err := m.conn.Read(context.Background())
 		if err != nil {
+			// Ignore normal close errors (happens when switching rooms)
+			if websocket.CloseStatus(err) == websocket.StatusNormalClosure {
+				return nil
+			}
 			return errMsg(err)
 		}
 
@@ -151,6 +155,7 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	case connectedMsg:
 		m.conn = msg.conn
 		m.connectedTo = msg.roomID
+		m.err = nil
 		m.messages = []string{}
 		m.updateViewportContent()
 		return m, m.listenForMessages()
