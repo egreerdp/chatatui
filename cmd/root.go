@@ -29,7 +29,22 @@ var rootCmd = &cobra.Command{
 			defer func() { _ = f.Close() }()
 		}
 
-		if _, err := tea.NewProgram(ui.NewModel(), tea.WithAltScreen()).Run(); err != nil {
+		cfg := ui.Config{
+			ServerAddr: viper.GetString("server"),
+			APIKey:     viper.GetString("api_key"),
+		}
+
+		if cfg.ServerAddr == "" {
+			fmt.Fprintln(os.Stderr, "error: 'server' not set in config file")
+			os.Exit(1)
+		}
+
+		if cfg.APIKey == "" {
+			fmt.Fprintln(os.Stderr, "error: 'api_key' not set in config file")
+			os.Exit(1)
+		}
+
+		if _, err := tea.NewProgram(ui.NewModel(cfg), tea.WithAltScreen()).Run(); err != nil {
 			panic(err)
 		}
 	},

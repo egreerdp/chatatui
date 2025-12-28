@@ -30,12 +30,14 @@ func NewHandler(hub *hub.Hub, db *repository.SQLiteDB) *Handler {
 func (h *Handler) Routes() chi.Router {
 	ws := NewWSHandler(h.Hub, h.DB)
 	register := NewRegisterHandler(h.DB)
+	rooms := NewRoomsHandler(h.DB)
 
 	h.Router.Post("/register", register.Handle)
 
-	h.Router.Route("/ws", func(r chi.Router) {
+	h.Router.Group(func(r chi.Router) {
 		r.Use(middleware.APIKeyAuth(h.DB.Users()))
-		r.Get("/{roomID}", ws.Handle)
+		r.Get("/rooms", rooms.List)
+		r.Get("/ws/{roomID}", ws.Handle)
 	})
 
 	return h.Router

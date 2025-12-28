@@ -1,10 +1,16 @@
 package ui
 
 import (
+	"context"
+	"encoding/json"
+	"fmt"
+	"net/http"
+
 	"github.com/charmbracelet/bubbles/textinput"
 	"github.com/charmbracelet/bubbles/viewport"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
+	"github.com/coder/websocket"
 )
 
 type focus int
@@ -16,28 +22,46 @@ const (
 )
 
 type Room struct {
-	ID   string
-	Name string
+	ID   string `json:"id"`
+	Name string `json:"name"`
+}
+
+type Config struct {
+	ServerAddr string
+	APIKey     string
 }
 
 type Model struct {
-	viewport  viewport.Model
-	input     textinput.Model
-	rooms     []Room
-	messages  []string
-	focus     focus
-	width     int
-	height    int
-	ready     bool
-	roomIndex int
+	config      Config
+	viewport    viewport.Model
+	input       textinput.Model
+	rooms       []Room
+	messages    []string
+	focus       focus
+	width       int
+	height      int
+	ready       bool
+	roomIndex   int
+	err         error
+	conn        *websocket.Conn
+	connectedTo string
 }
 
-func NewModel() *Model {
+type roomsMsg []Room
+type errMsg error
+type connectedMsg struct {
+	roomID string
+	conn   *websocket.Conn
+}
+type incomingMsg string
+
+func NewModel(cfg Config) *Model {
 	ti := textinput.New()
 	ti.Placeholder = "Type a message..."
 	ti.Focus()
 
 	return &Model{
+		config:   cfg,
 		input:    ti,
 		rooms:    []Room{},
 		messages: []string{},
@@ -45,14 +69,102 @@ func NewModel() *Model {
 	}
 }
 
+func (m Model) fetchRooms() tea.Msg {
+	url := fmt.Sprintf("http://%s/rooms", m.config.ServerAddr)
+
+	req, err := http.NewRequest("GET", url, nil)
+	if err != nil {
+		return errMsg(err)
+	}
+	req.Header.Set("Authorization", m.config.APIKey)
+
+	resp, err := http.DefaultClient.Do(req)
+	if err != nil {
+		return errMsg(err)
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		return errMsg(fmt.Errorf("server returned %d", resp.StatusCode))
+	}
+
+	var rooms []Room
+	if err := json.NewDecoder(resp.Body).Decode(&rooms); err != nil {
+		return errMsg(err)
+	}
+
+	return roomsMsg(rooms)
+}
+
 func (m Model) Init() tea.Cmd {
-	return textinput.Blink
+	return tea.Batch(textinput.Blink, m.fetchRooms)
+}
+
+func (m *Model) connectToRoom(roomID string) tea.Cmd {
+	return func() tea.Msg {
+		if m.conn != nil {
+			_ = m.conn.Close(websocket.StatusNormalClosure, "switching rooms")
+		}
+
+		url := fmt.Sprintf("ws://%s/ws/%s", m.config.ServerAddr, roomID)
+
+		ctx := context.Background()
+		conn, _, err := websocket.Dial(ctx, url, &websocket.DialOptions{
+			HTTPHeader: http.Header{
+				"Authorization": []string{m.config.APIKey},
+			},
+		})
+		if err != nil {
+			return errMsg(err)
+		}
+
+		return connectedMsg{roomID: roomID, conn: conn}
+	}
+}
+
+func (m *Model) listenForMessages() tea.Cmd {
+	return func() tea.Msg {
+		if m.conn == nil {
+			return nil
+		}
+
+		_, data, err := m.conn.Read(context.Background())
+		if err != nil {
+			return errMsg(err)
+		}
+
+		return incomingMsg(string(data))
+	}
 }
 
 func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	var cmds []tea.Cmd
 
 	switch msg := msg.(type) {
+	case roomsMsg:
+		m.rooms = msg
+		if len(m.rooms) > 0 {
+			return m, m.connectToRoom(m.rooms[0].ID)
+		}
+		return m, nil
+
+	case connectedMsg:
+		m.conn = msg.conn
+		m.connectedTo = msg.roomID
+		m.messages = []string{}
+		m.updateViewportContent()
+		return m, m.listenForMessages()
+
+	case incomingMsg:
+		m.messages = append(m.messages, string(msg))
+		m.updateViewportContent()
+		m.viewport.GotoBottom()
+		return m, m.listenForMessages()
+
+	case errMsg:
+		m.err = msg
+		return m, nil
+
 	case tea.KeyMsg:
 		switch msg.String() {
 		case "ctrl+c":
@@ -72,11 +184,23 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			}
 			return m, nil
 		case "enter":
-			if m.focus == focusInput && m.input.Value() != "" {
-				m.messages = append(m.messages, "You: "+m.input.Value())
+			if m.focus == focusRooms && len(m.rooms) > 0 {
+				roomID := m.rooms[m.roomIndex].ID
+				if roomID != m.connectedTo {
+					return m, m.connectToRoom(roomID)
+				}
+			}
+			if m.focus == focusInput && m.input.Value() != "" && m.conn != nil {
+				msg := m.input.Value()
 				m.input.Reset()
-				m.updateViewportContent()
-				m.viewport.GotoBottom()
+				err := m.conn.Write(context.Background(), websocket.MessageText, []byte(msg))
+				if err != nil {
+					m.err = err
+				} else {
+					m.messages = append(m.messages, "You: "+msg)
+					m.updateViewportContent()
+					m.viewport.GotoBottom()
+				}
 			}
 		case "up", "k":
 			if m.focus == focusRooms {
@@ -221,7 +345,10 @@ func (m Model) renderSidebar() string {
 		roomList += name + "\n"
 	}
 
-	if len(m.rooms) == 0 {
+	if m.err != nil {
+		errStyle := lipgloss.NewStyle().Foreground(lipgloss.Color("196"))
+		roomList = errStyle.Render("Error: " + m.err.Error())
+	} else if len(m.rooms) == 0 {
 		roomList = "(no rooms)"
 	}
 
@@ -235,7 +362,16 @@ func (m Model) renderMain() string {
 		Bold(true).
 		Padding(0, 1)
 
-	header := headerStyle.Render("chatatui")
+	title := "chatatui"
+	if m.connectedTo != "" {
+		for _, room := range m.rooms {
+			if room.ID == m.connectedTo {
+				title = room.Name
+				break
+			}
+		}
+	}
+	header := headerStyle.Render(title)
 
 	viewportStyle := lipgloss.NewStyle()
 	if m.focus == focusMessages {

@@ -79,6 +79,7 @@ func (c *Client) writePump(ctx context.Context) {
 func (c *Client) Send(msg []byte) {
 	select {
 	case c.send <- c.FormatMessageText(msg):
+		log.Println(string(c.FormatMessageText(msg)))
 	default:
 	}
 }
