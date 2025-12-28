@@ -57,8 +57,20 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		switch msg.String() {
 		case "ctrl+c":
 			return m, tea.Quit
-		case "tab":
-			m.cycleFocus()
+		case "left", "[":
+			if m.focus == focusMessages {
+				m.setFocus(focusRooms)
+			} else if m.focus == focusInput {
+				m.setFocus(focusMessages)
+			}
+			return m, nil
+		case "right", "]":
+			if m.focus == focusRooms {
+				m.setFocus(focusMessages)
+			} else if m.focus == focusMessages {
+				m.setFocus(focusInput)
+			}
+			return m, nil
 		case "enter":
 			if m.focus == focusInput && m.input.Value() != "" {
 				m.messages = append(m.messages, "You: "+m.input.Value())
@@ -67,12 +79,18 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				m.viewport.GotoBottom()
 			}
 		case "up", "k":
-			if m.focus == focusRooms && m.roomIndex > 0 {
-				m.roomIndex--
+			if m.focus == focusRooms {
+				if m.roomIndex > 0 {
+					m.roomIndex--
+				}
+				return m, nil
 			}
 		case "down", "j":
-			if m.focus == focusRooms && m.roomIndex < len(m.rooms)-1 {
-				m.roomIndex++
+			if m.focus == focusRooms {
+				if m.roomIndex < len(m.rooms)-1 {
+					m.roomIndex++
+				}
+				return m, nil
 			}
 		}
 
@@ -80,9 +98,9 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		m.width = msg.Width
 		m.height = msg.Height
 
-		// Account for outer border
+		// Account for outer border and help bar
 		innerWidth := m.width - 4
-		innerHeight := m.height - 4
+		innerHeight := m.height - 4 - 1
 
 		sidebarWidth := m.sidebarWidth()
 		mainWidth := innerWidth - sidebarWidth - 1
@@ -128,25 +146,46 @@ func (m Model) View() string {
 
 	content := lipgloss.JoinHorizontal(lipgloss.Top, sidebar, main)
 
+	help := m.renderHelp()
+
 	appStyle := lipgloss.NewStyle().
 		Border(lipgloss.RoundedBorder()).
 		BorderForeground(lipgloss.Color("240")).
 		Width(m.width - 2).
 		Height(m.height - 2)
 
-	return appStyle.Render(content)
+	return appStyle.Render(lipgloss.JoinVertical(lipgloss.Left, content, help))
+}
+
+func (m *Model) setFocus(f focus) {
+	if m.focus == focusInput {
+		m.input.Blur()
+	}
+	m.focus = f
+	if f == focusInput {
+		m.input.Focus()
+	}
 }
 
 func (m *Model) cycleFocus() {
 	switch m.focus {
-	case focusInput:
-		m.focus = focusRooms
-		m.input.Blur()
 	case focusRooms:
-		m.focus = focusMessages
+		m.setFocus(focusMessages)
 	case focusMessages:
-		m.focus = focusInput
-		m.input.Focus()
+		m.setFocus(focusInput)
+	case focusInput:
+		m.setFocus(focusRooms)
+	}
+}
+
+func (m *Model) cycleFocusReverse() {
+	switch m.focus {
+	case focusRooms:
+		m.setFocus(focusInput)
+	case focusMessages:
+		m.setFocus(focusRooms)
+	case focusInput:
+		m.setFocus(focusMessages)
 	}
 }
 
@@ -156,7 +195,7 @@ func (m Model) sidebarWidth() int {
 
 func (m Model) renderSidebar() string {
 	width := m.sidebarWidth()
-	innerHeight := m.height - 4
+	innerHeight := m.height - 4 - 1
 
 	style := lipgloss.NewStyle().
 		Width(width).
@@ -224,4 +263,33 @@ func (m *Model) updateViewportContent() {
 		content += msg + "\n"
 	}
 	m.viewport.SetContent(content)
+}
+
+func (m Model) renderHelp() string {
+	keyStyle := lipgloss.NewStyle().Foreground(lipgloss.Color("62")).Bold(true)
+	descStyle := lipgloss.NewStyle().Foreground(lipgloss.Color("240"))
+
+	keys := []struct{ key, desc string }{
+		{"←/→", "panels"},
+		{"j/k", "navigate"},
+		{"enter", "send"},
+		{"ctrl+c", "quit"},
+	}
+
+	var items []string
+	for _, k := range keys {
+		items = append(items, keyStyle.Render(k.key)+" "+descStyle.Render(k.desc))
+	}
+
+	sep := descStyle.Render(" • ")
+
+	var result string
+	for i, item := range items {
+		if i > 0 {
+			result += sep
+		}
+		result += item
+	}
+
+	return "  " + result
 }
