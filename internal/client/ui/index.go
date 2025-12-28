@@ -80,12 +80,16 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		m.width = msg.Width
 		m.height = msg.Height
 
+		// Account for outer border
+		innerWidth := m.width - 4
+		innerHeight := m.height - 4
+
 		sidebarWidth := m.sidebarWidth()
-		mainWidth := m.width - sidebarWidth - 1
+		mainWidth := innerWidth - sidebarWidth - 1
 
 		headerHeight := 1
 		inputHeight := 3
-		viewportHeight := m.height - headerHeight - inputHeight
+		viewportHeight := innerHeight - headerHeight - inputHeight
 
 		if !m.ready {
 			m.viewport = viewport.New(mainWidth, viewportHeight)
@@ -122,7 +126,15 @@ func (m Model) View() string {
 	sidebar := m.renderSidebar()
 	main := m.renderMain()
 
-	return lipgloss.JoinHorizontal(lipgloss.Top, sidebar, main)
+	content := lipgloss.JoinHorizontal(lipgloss.Top, sidebar, main)
+
+	appStyle := lipgloss.NewStyle().
+		Border(lipgloss.RoundedBorder()).
+		BorderForeground(lipgloss.Color("240")).
+		Width(m.width - 2).
+		Height(m.height - 2)
+
+	return appStyle.Render(content)
 }
 
 func (m *Model) cycleFocus() {
@@ -144,10 +156,11 @@ func (m Model) sidebarWidth() int {
 
 func (m Model) renderSidebar() string {
 	width := m.sidebarWidth()
+	innerHeight := m.height - 4
 
 	style := lipgloss.NewStyle().
 		Width(width).
-		Height(m.height).
+		Height(innerHeight).
 		BorderStyle(lipgloss.RoundedBorder()).
 		BorderRight(true).
 		Padding(0, 1)
