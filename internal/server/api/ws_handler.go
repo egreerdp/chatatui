@@ -3,6 +3,7 @@ package api
 import (
 	"log"
 	"net/http"
+	"os"
 	"time"
 
 	"github.com/coder/websocket"
@@ -20,9 +21,13 @@ type WSHandler struct {
 
 func NewWSHandler(h *hub.Hub, db *repository.SQLiteDB) *WSHandler {
 	go func() {
+		debug := os.Getenv("DEBUG")
+		if debug != "true" && debug != "1" {
+			return
+		}
+
 		for {
 			time.Sleep(time.Second * 5)
-
 			log.Println("Room Count:", len(h.Rooms))
 		}
 	}()
