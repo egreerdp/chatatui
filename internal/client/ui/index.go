@@ -47,12 +47,14 @@ type Model struct {
 	connectedTo string
 }
 
-type roomsMsg []Room
-type errMsg error
-type connectedMsg struct {
-	roomID string
-	conn   *websocket.Conn
-}
+type (
+	roomsMsg     []Room
+	errMsg       error
+	connectedMsg struct {
+		roomID string
+		conn   *websocket.Conn
+	}
+)
 type incomingMsg string
 
 func NewModel(cfg Config) *Model {
@@ -82,7 +84,7 @@ func (m Model) fetchRooms() tea.Msg {
 	if err != nil {
 		return errMsg(err)
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	if resp.StatusCode != http.StatusOK {
 		return errMsg(fmt.Errorf("server returned %d", resp.StatusCode))
@@ -175,16 +177,18 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		case "ctrl+c":
 			return m, tea.Quit
 		case "left", "[":
-			if m.focus == focusMessages {
+			switch m.focus {
+			case focusMessages:
 				m.setFocus(focusRooms)
-			} else if m.focus == focusInput {
+			case focusInput:
 				m.setFocus(focusMessages)
 			}
 			return m, nil
 		case "right", "]":
-			if m.focus == focusRooms {
+			switch m.focus {
+			case focusRooms:
 				m.setFocus(focusMessages)
-			} else if m.focus == focusMessages {
+			case focusMessages:
 				m.setFocus(focusInput)
 			}
 			return m, nil
@@ -293,28 +297,6 @@ func (m *Model) setFocus(f focus) {
 	m.focus = f
 	if f == focusInput {
 		m.input.Focus()
-	}
-}
-
-func (m *Model) cycleFocus() {
-	switch m.focus {
-	case focusRooms:
-		m.setFocus(focusMessages)
-	case focusMessages:
-		m.setFocus(focusInput)
-	case focusInput:
-		m.setFocus(focusRooms)
-	}
-}
-
-func (m *Model) cycleFocusReverse() {
-	switch m.focus {
-	case focusRooms:
-		m.setFocus(focusInput)
-	case focusMessages:
-		m.setFocus(focusRooms)
-	case focusInput:
-		m.setFocus(focusMessages)
 	}
 }
 

@@ -15,11 +15,12 @@ import (
 )
 
 type WSHandler struct {
-	hub *hub.Hub
-	db  *repository.SQLiteDB
+	hub                 *hub.Hub
+	db                  *repository.SQLiteDB
+	messageHistoryLimit int
 }
 
-func NewWSHandler(h *hub.Hub, db *repository.SQLiteDB) *WSHandler {
+func NewWSHandler(h *hub.Hub, db *repository.SQLiteDB, messageHistoryLimit int) *WSHandler {
 	go func() {
 		debug := os.Getenv("DEBUG")
 		if debug != "true" && debug != "1" {
@@ -33,8 +34,9 @@ func NewWSHandler(h *hub.Hub, db *repository.SQLiteDB) *WSHandler {
 	}()
 
 	return &WSHandler{
-		hub: h,
-		db:  db,
+		hub:                 h,
+		db:                  db,
+		messageHistoryLimit: messageHistoryLimit,
 	}
 }
 
@@ -86,7 +88,7 @@ func (h *WSHandler) Handle(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *WSHandler) sendHistory(client *hub.Client, roomID uint) {
-	messages, err := h.db.Messages().GetByRoom(roomID, 50, 0)
+	messages, err := h.db.Messages().GetByRoom(roomID, h.messageHistoryLimit, 0)
 	if err != nil {
 		log.Println("failed to get message history:", err)
 		return

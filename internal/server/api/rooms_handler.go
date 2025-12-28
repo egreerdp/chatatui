@@ -8,11 +8,12 @@ import (
 )
 
 type RoomsHandler struct {
-	db *repository.SQLiteDB
+	db        *repository.SQLiteDB
+	listLimit int
 }
 
-func NewRoomsHandler(db *repository.SQLiteDB) *RoomsHandler {
-	return &RoomsHandler{db: db}
+func NewRoomsHandler(db *repository.SQLiteDB, listLimit int) *RoomsHandler {
+	return &RoomsHandler{db: db, listLimit: listLimit}
 }
 
 type roomResponse struct {
@@ -21,7 +22,7 @@ type roomResponse struct {
 }
 
 func (h *RoomsHandler) List(w http.ResponseWriter, r *http.Request) {
-	rooms, err := h.db.Rooms().List(100, 0)
+	rooms, err := h.db.Rooms().List(h.listLimit, 0)
 	if err != nil {
 		http.Error(w, "failed to list rooms", http.StatusInternalServerError)
 		return

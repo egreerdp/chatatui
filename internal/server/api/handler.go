@@ -1,6 +1,7 @@
 package api
 
 import (
+	"github.com/egreerdp/chatatui/internal/config"
 	"github.com/egreerdp/chatatui/internal/middleware"
 	"github.com/egreerdp/chatatui/internal/repository"
 	"github.com/egreerdp/chatatui/internal/server/hub"
@@ -12,9 +13,10 @@ type Handler struct {
 	Router chi.Router
 	Hub    *hub.Hub
 	DB     *repository.SQLiteDB
+	Config config.ServerConfig
 }
 
-func NewHandler(hub *hub.Hub, db *repository.SQLiteDB) *Handler {
+func NewHandler(hub *hub.Hub, db *repository.SQLiteDB, cfg config.ServerConfig) *Handler {
 	r := chi.NewRouter()
 	r.Use(chimw.Logger)
 	r.Use(chimw.Recoverer)
@@ -24,13 +26,14 @@ func NewHandler(hub *hub.Hub, db *repository.SQLiteDB) *Handler {
 		Router: r,
 		Hub:    hub,
 		DB:     db,
+		Config: cfg,
 	}
 }
 
 func (h *Handler) Routes() chi.Router {
-	ws := NewWSHandler(h.Hub, h.DB)
+	ws := NewWSHandler(h.Hub, h.DB, h.Config.MessageHistoryLimit)
 	register := NewRegisterHandler(h.DB)
-	rooms := NewRoomsHandler(h.DB)
+	rooms := NewRoomsHandler(h.DB, h.Config.RoomListLimit)
 
 	h.Router.Post("/register", register.Handle)
 

@@ -1,2 +1,10 @@
+# Client settings
 server = "localhost:8080"
 api_key = "your-api-key-2"
+
+# Server settings
+[server]
+port = ":8080"
+database = "chatatui.db"
+message_history_limit = 50
+room_list_limit = 100

@@ -40,9 +40,9 @@
 - [ ] Return messages as structured model (author, timestamp, edited, etc.) not just text
 
 ### Configuration
-- [ ] Server config file/section (port, db path, limits)
-- [ ] Configurable message history limit (currently hardcoded 50)
-- [ ] Configurable room list limit (currently hardcoded 100)
+- [x] Server config file/section (port, db path, limits)
+- [x] Configurable message history limit (currently hardcoded 50)
+- [x] Configurable room list limit (currently hardcoded 100)
 
 ## Infrastructure
 
