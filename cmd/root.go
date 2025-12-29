@@ -30,12 +30,12 @@ var rootCmd = &cobra.Command{
 		}
 
 		cfg := ui.Config{
-			ServerAddr: viper.GetString("server"),
+			ServerAddr: viper.GetString("host"),
 			APIKey:     viper.GetString("api_key"),
 		}
 
 		if cfg.ServerAddr == "" {
-			fmt.Fprintln(os.Stderr, "error: 'server' not set in config file")
+			fmt.Fprintln(os.Stderr, "error: 'host' not set in config file")
 			os.Exit(1)
 		}
 
