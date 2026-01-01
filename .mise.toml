@@ -10,6 +10,6 @@ run = "go build -o ./bin/chatatui ."
 description = "build the application binary"
 
 [tasks.dev]
-run = "./bin/chatatui"
+run = "./bin/chatatui --config dev-config.toml"
 description = "run the build binary"
 depends = "build"
