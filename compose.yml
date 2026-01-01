@@ -1,0 +1,39 @@
+services:
+  redis:
+    container_name: redis
+    image: redis:latest
+    restart: always
+    ports:
+      - "6379:6379"
+    volumes:
+      - cache_data:/data
+
+  database:
+    container_name: postgres
+    image: "postgres:latest"
+    ports:
+      - ${POSTGRES_PORT:-5432}:5432
+    environment:
+      POSTGRES_USER: root
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: chatatui
+    volumes:
+      - postgres_data:/var/lib/postgresql
+
+  pgadmin:
+    container_name: pg-admin
+    image: dpage/pgadmin4
+    ports:
+      - ${PG_ADMIN_PORT:-5433}:80
+    environment:
+      PGADMIN_DEFAULT_EMAIL: admin@example.com
+      PGADMIN_DEFAULT_PASSWORD: password
+    depends_on:
+      - database
+    volumes:
+      - pg_admin_data:/var/lib/pgadmin/
+
+volumes:
+  cache_data:
+  postgres_data:
+  pg_admin_data:
