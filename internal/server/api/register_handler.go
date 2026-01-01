@@ -11,10 +11,10 @@ import (
 )
 
 type RegisterHandler struct {
-	db *repository.SQLiteDB
+	db *repository.PostgresDB
 }
 
-func NewRegisterHandler(db *repository.SQLiteDB) *RegisterHandler {
+func NewRegisterHandler(db *repository.PostgresDB) *RegisterHandler {
 	return &RegisterHandler{db: db}
 }
 

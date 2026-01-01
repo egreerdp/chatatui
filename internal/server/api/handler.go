@@ -12,11 +12,11 @@ import (
 type Handler struct {
 	Router chi.Router
 	Hub    *hub.Hub
-	DB     *repository.SQLiteDB
+	DB     *repository.PostgresDB
 	Config config.ServerConfig
 }
 
-func NewHandler(hub *hub.Hub, db *repository.SQLiteDB, cfg config.ServerConfig) *Handler {
+func NewHandler(hub *hub.Hub, db *repository.PostgresDB, cfg config.ServerConfig) *Handler {
 	r := chi.NewRouter()
 	r.Use(chimw.Logger)
 	r.Use(chimw.Recoverer)

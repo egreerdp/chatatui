@@ -16,11 +16,11 @@ import (
 
 type WSHandler struct {
 	hub                 *hub.Hub
-	db                  *repository.SQLiteDB
+	db                  *repository.PostgresDB
 	messageHistoryLimit int
 }
 
-func NewWSHandler(h *hub.Hub, db *repository.SQLiteDB, messageHistoryLimit int) *WSHandler {
+func NewWSHandler(h *hub.Hub, db *repository.PostgresDB, messageHistoryLimit int) *WSHandler {
 	go func() {
 		debug := os.Getenv("DEBUG")
 		if debug != "true" && debug != "1" {

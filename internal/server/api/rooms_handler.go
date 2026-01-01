@@ -8,11 +8,11 @@ import (
 )
 
 type RoomsHandler struct {
-	db        *repository.SQLiteDB
+	db        *repository.PostgresDB
 	listLimit int
 }
 
-func NewRoomsHandler(db *repository.SQLiteDB, listLimit int) *RoomsHandler {
+func NewRoomsHandler(db *repository.PostgresDB, listLimit int) *RoomsHandler {
 	return &RoomsHandler{db: db, listLimit: listLimit}
 }
 

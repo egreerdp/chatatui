@@ -12,10 +12,10 @@ type ChatServer struct {
 	handler *api.Handler
 	srv     *http.Server
 	addr    string
-	db      *repository.SQLiteDB
+	db      *repository.PostgresDB
 }
 
-func NewChatServer(h *api.Handler, addr string, db *repository.SQLiteDB) *ChatServer {
+func NewChatServer(h *api.Handler, addr string, db *repository.PostgresDB) *ChatServer {
 	return &ChatServer{
 		handler: h,
 		addr:    addr,

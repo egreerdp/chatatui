@@ -25,7 +25,7 @@ var serveCmd = &cobra.Command{
 	Run: func(cmd *cobra.Command, args []string) {
 		cfg := config.LoadServerConfig()
 
-		database := repository.NewSQLiteDB(cfg.Database)
+		database := repository.NewPostgresDB(cfg.DatabaseDSN)
 		handler := api.NewHandler(hub.NewHub(), database, cfg)
 		srv := server.NewChatServer(handler, cfg.Port, database)
 

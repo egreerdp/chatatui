@@ -4,6 +4,7 @@ set -euo pipefail
 # ---- Configurable defaults (override via environment) ----
 : "${APP_PKG:=.}"                                # main package path (root of project)
 : "${APP_BIN:=/tmp/app}"                         # compiled binary path inside container
+: "${APP_CONFIG:=/app/dev-config.toml}"          # config file path
 : "${APP_CMD:=serve}"                            # subcommand to run (serve starts the server)
 : "${DLV_ADDR:=0.0.0.0:2345}"                    # delve listen address
 : "${AIR_TMPDIR:=/tmp/air}"                      # air temp dir
@@ -14,7 +15,7 @@ mkdir -p "$(dirname "$APP_BIN")" "$AIR_TMPDIR"
 
 # Build and run commands
 GO_BUILD_CMD="go build -buildvcs=false -gcflags='all=-N -l' -o ${APP_BIN} ${APP_PKG}"
-DLV_RUN_CMD="dlv exec ${APP_BIN} --headless --listen=${DLV_ADDR} --api-version=2 --accept-multiclient --continue -- ${APP_CMD}"
+DLV_RUN_CMD="dlv exec ${APP_BIN} --headless --listen=${DLV_ADDR} --api-version=2 --accept-multiclient --continue -- --config ${APP_CONFIG} ${APP_CMD}"
 
 # Generate a throwaway .air.toml each run (so env overrides Just Work™)
 AIR_TOML="$(mktemp)"

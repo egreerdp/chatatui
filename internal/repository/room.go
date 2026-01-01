@@ -71,7 +71,7 @@ func (r *RoomRepository) Delete(id uint) error {
 }
 
 func (r *RoomRepository) AddMember(roomID, userID uint) error {
-	return r.db.Exec("INSERT OR IGNORE INTO room_members (room_id, user_id) VALUES (?, ?)", roomID, userID).Error
+	return r.db.Exec("INSERT INTO room_members (room_id, user_id) VALUES (?, ?) ON CONFLICT DO NOTHING", roomID, userID).Error
 }
 
 func (r *RoomRepository) RemoveMember(roomID, userID uint) error {
