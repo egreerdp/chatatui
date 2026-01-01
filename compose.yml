@@ -1,4 +1,16 @@
 services:
+  server:
+    container_name: chatatui-server
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: development
+    ports:
+      - "2345:2345"
+      - "8080:8080"
+    volumes:
+      - .:/app
+
   redis:
     container_name: redis
     image: redis:latest
