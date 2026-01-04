@@ -1,5 +1,7 @@
 github.com/EwanGreer/cache v0.7.0 h1:MGZyWKZD32aUU8EVJ41RNm6cAY+Elj0WdPTs14VK69Q=
 github.com/EwanGreer/cache v0.7.0/go.mod h1:R41RIhV3OQY78/Brg8ktp3UGxl648AuinhWvMwsuTTQ=
+github.com/EwanGreer/cache v0.8.0 h1:Z3uc1Cj5ZeDbr7Fv6A+eloi5HyZ5xpLJWqxMBYqKV/M=
+github.com/EwanGreer/cache v0.8.0/go.mod h1:R41RIhV3OQY78/Brg8ktp3UGxl648AuinhWvMwsuTTQ=
 github.com/atotto/clipboard v0.1.4 h1:EH0zSVneZPSuFR11BlR9YppQTVDbh5+16AmcJi4g1z4=
 github.com/atotto/clipboard v0.1.4/go.mod h1:ZY9tmq7sm5xIbd9bOK4onWV4S6X0u6GY7Vn0Yu86PYI=
 github.com/aymanbagabas/go-osc52/v2 v2.0.1 h1:HwpRHbFMcZLEVr42D4p7XBqjyuxQH5SMiErDT4WkJ2k=

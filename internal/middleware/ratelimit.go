@@ -3,7 +3,6 @@ package middleware
 import (
 	"context"
 	"fmt"
-	"log"
 	"net/http"
 	"time"
 
@@ -14,7 +13,7 @@ import (
 type rateLimitEntry struct{}
 
 func (r rateLimitEntry) CacheKey() string    { return "" }
-func (r rateLimitEntry) CachePrefix() string { return "ratelimit" }
+func (r rateLimitEntry) CachePrefix() string { return "ratelimit:user" }
 
 type RateLimiter struct {
 	cache      cache.RedisCache[rateLimitEntry]
@@ -57,7 +56,7 @@ func (rl *RateLimiter) Middleware(next http.Handler) http.Handler {
 			return
 		}
 
-		key := fmt.Sprintf("ratelimit:%d", user.ID)
+		key := fmt.Sprintf("%d", user.ID)
 
 		allowed, err := rl.isAllowed(r.Context(), key)
 		if err != nil {
@@ -66,7 +65,6 @@ func (rl *RateLimiter) Middleware(next http.Handler) http.Handler {
 		}
 
 		if !allowed {
-			log.Println("Ratelimitted user:", user.Name)
 			w.Header().Set("Retry-After", fmt.Sprintf("%d", rl.windowSecs))
 			http.Error(w, "rate limit exceeded", http.StatusTooManyRequests)
 			return
