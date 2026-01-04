@@ -10,23 +10,25 @@ import (
 )
 
 type Handler struct {
-	Router chi.Router
-	Hub    *hub.Hub
-	DB     *repository.PostgresDB
-	Config config.ServerConfig
+	Router      chi.Router
+	Hub         *hub.Hub
+	DB          *repository.PostgresDB
+	Config      config.ServerConfig
+	RateLimiter *middleware.RateLimiter
 }
 
-func NewHandler(hub *hub.Hub, db *repository.PostgresDB, cfg config.ServerConfig) *Handler {
+func NewHandler(hub *hub.Hub, db *repository.PostgresDB, cfg config.ServerConfig, rl *middleware.RateLimiter) *Handler {
 	r := chi.NewRouter()
 	r.Use(chimw.Logger)
 	r.Use(chimw.Recoverer)
 	r.Use(chimw.Heartbeat("/up"))
 
 	return &Handler{
-		Router: r,
-		Hub:    hub,
-		DB:     db,
-		Config: cfg,
+		Router:      r,
+		Hub:         hub,
+		DB:          db,
+		Config:      cfg,
+		RateLimiter: rl,
 	}
 }
 
@@ -38,7 +40,11 @@ func (h *Handler) Routes() chi.Router {
 	h.Router.Post("/register", register.Handle)
 
 	h.Router.Group(func(r chi.Router) {
-		r.Use(middleware.APIKeyAuth(h.DB.Users()))
+		r.Use(
+			middleware.APIKeyAuth(h.DB.Users()),
+			h.RateLimiter.Middleware,
+		)
+
 		r.Get("/rooms", rooms.List)
 		r.Get("/ws/{roomID}", ws.Handle)
 	})

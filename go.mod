@@ -3,12 +3,14 @@ module github.com/egreerdp/chatatui
 go 1.25.5
 
 require (
+	github.com/EwanGreer/cache v0.7.0
 	github.com/charmbracelet/bubbles v0.21.0
 	github.com/charmbracelet/bubbletea v1.3.10
 	github.com/charmbracelet/lipgloss v1.1.0
 	github.com/coder/websocket v1.8.14
 	github.com/go-chi/chi/v5 v5.2.3
 	github.com/google/uuid v1.6.0
+	github.com/redis/go-redis/v9 v9.11.0
 	github.com/spf13/cobra v1.10.2
 	github.com/spf13/viper v1.21.0
 	gorm.io/driver/postgres v1.6.0
@@ -27,10 +29,12 @@ require (
 require (
 	github.com/atotto/clipboard v0.1.4 // indirect
 	github.com/aymanbagabas/go-osc52/v2 v2.0.1 // indirect
+	github.com/cespare/xxhash/v2 v2.3.0 // indirect
 	github.com/charmbracelet/colorprofile v0.2.3-0.20250311203215-f60798e515dc // indirect
 	github.com/charmbracelet/x/ansi v0.10.1 // indirect
 	github.com/charmbracelet/x/cellbuf v0.0.13-0.20250311204145-2c3ea96c31dd // indirect
 	github.com/charmbracelet/x/term v0.2.1 // indirect
+	github.com/dgryski/go-rendezvous v0.0.0-20200823014737-9f7001d12a5f // indirect
 	github.com/erikgeiser/coninput v0.0.0-20211004153227-1c3628e74d0f // indirect
 	github.com/fsnotify/fsnotify v1.9.0 // indirect
 	github.com/go-viper/mapstructure/v2 v2.4.0 // indirect
