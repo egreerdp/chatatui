@@ -21,7 +21,7 @@ type WSHandler struct {
 }
 
 func NewWSHandler(h *hub.Hub, db *repository.PostgresDB, messageHistoryLimit int) *WSHandler {
-	go func() {
+	go func() { // TODO: create a leveled logger, such as slog or zap.
 		debug := os.Getenv("DEBUG")
 		if debug != "true" && debug != "1" {
 			return
@@ -53,6 +53,7 @@ func (h *WSHandler) Handle(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// TODO: we should not be creating here. We should have a seperate endpoint for that.
 	dbRoom, err := h.db.Rooms().GetOrCreateByUUID(roomUUID)
 	if err != nil {
 		http.Error(w, "failed to get room", http.StatusInternalServerError)
@@ -66,14 +67,13 @@ func (h *WSHandler) Handle(w http.ResponseWriter, r *http.Request) {
 	}
 	defer func() { _ = conn.CloseNow() }()
 
-	user := middleware.UserFromContext(r.Context())
-
-	room, err := h.hub.GetOrCreateRoom(roomID)
+	room, err := h.hub.GetOrCreateRoom(roomUUID)
 	if err != nil {
 		_ = conn.Close(websocket.StatusInternalError, "failed to join room")
 		return
 	}
 
+	user := middleware.UserFromContext(r.Context())
 	if err := h.db.Rooms().AddMember(dbRoom.ID, user.ID); err != nil {
 		log.Println("failed to add room member:", err)
 	}

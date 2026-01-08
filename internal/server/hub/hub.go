@@ -1,7 +1,6 @@
 package hub
 
 import (
-	"fmt"
 	"sync"
 
 	"github.com/google/uuid"
@@ -18,14 +17,9 @@ func NewHub() *Hub {
 	}
 }
 
-func (h *Hub) GetOrCreateRoom(roomID string) (*Room, error) {
+func (h *Hub) GetOrCreateRoom(roomUUID uuid.UUID) (*Room, error) {
 	h.mu.Lock()
 	defer h.mu.Unlock()
-
-	roomUUID, err := uuid.Parse(roomID)
-	if err != nil {
-		return nil, fmt.Errorf("parse uuid: %w", err)
-	}
 
 	if room, ok := h.Rooms[roomUUID]; ok {
 		return room, nil
