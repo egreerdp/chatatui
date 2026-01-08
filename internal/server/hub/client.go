@@ -30,10 +30,10 @@ func NewClient(conn *websocket.Conn, roomID string, userID, dbRoomID uint, usern
 
 func (c *Client) Run(room *Room, msgRepo *repository.MessageRepository) {
 	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
 
 	go c.writePump(ctx)
 	c.readPump(ctx, room, msgRepo) // blocking
-	cancel()
 }
 
 func (c *Client) readPump(ctx context.Context, room *Room, msgRepo *repository.MessageRepository) {
@@ -45,7 +45,6 @@ func (c *Client) readPump(ctx context.Context, room *Room, msgRepo *repository.M
 			return
 		}
 
-		// Persist the message
 		msg := &repository.Message{
 			Content:  data,
 			SenderID: c.UserID,
@@ -59,6 +58,7 @@ func (c *Client) readPump(ctx context.Context, room *Room, msgRepo *repository.M
 	}
 }
 
+// TODO: we should probably log in here when we see errors
 func (c *Client) writePump(ctx context.Context) {
 	for {
 		select {

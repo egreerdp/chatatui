@@ -46,6 +46,7 @@ func (h *Handler) Routes() chi.Router {
 		)
 
 		r.Get("/rooms", rooms.List)
+		r.Post("/rooms", rooms.Create)
 		r.Get("/ws/{roomID}", ws.Handle)
 	})
 

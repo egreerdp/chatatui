@@ -33,6 +33,12 @@ func (cs *ChatServer) Start() error {
 }
 
 func (cs *ChatServer) Stop(ctx context.Context) error {
+	// Shutdown hub and worker pools first
+	if cs.handler != nil && cs.handler.Hub != nil {
+		cs.handler.Hub.Shutdown()
+	}
+
+	// Then shutdown HTTP server
 	if cs.srv != nil {
 		return cs.srv.Shutdown(ctx)
 	}

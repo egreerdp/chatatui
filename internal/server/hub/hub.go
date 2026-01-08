@@ -41,8 +41,14 @@ func (h *Hub) Add(room *Room) {
 
 func (h *Hub) Remove(roomID uuid.UUID) {
 	h.mu.Lock()
+	room := h.Rooms[roomID]
 	delete(h.Rooms, roomID)
 	h.mu.Unlock()
+
+	// Clean up worker pool if room exists
+	if room != nil {
+		room.Shutdown()
+	}
 }
 
 func (h *Hub) Broadcast(msg []byte, sender *Client) {
@@ -51,5 +57,15 @@ func (h *Hub) Broadcast(msg []byte, sender *Client) {
 
 	for _, room := range h.Rooms {
 		room.Broadcast(msg, sender)
+	}
+}
+
+// Shutdown gracefully shuts down all rooms and their worker pools
+func (h *Hub) Shutdown() {
+	h.mu.Lock()
+	defer h.mu.Unlock()
+
+	for _, room := range h.Rooms {
+		room.Shutdown()
 	}
 }

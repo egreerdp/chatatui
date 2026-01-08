@@ -1,0 +1,13 @@
+# Client settings
+host = "localhost:8080"
+api_key = "09e0d4697b31c48f49114abce33233f6ccd4ee81b2f20940fb6ce3b5fc8a62a9"
+
+# Server settings
+[server]
+port = ":8080"
+database_dsn = "postgres://root:password@database:5432/chatatui?sslmode=disable"
+redis_url = "redis://redis:6379"
+message_history_limit = 50
+room_list_limit = 100
+rate_limit_requests = 100
+rate_limit_window_secs = 60
