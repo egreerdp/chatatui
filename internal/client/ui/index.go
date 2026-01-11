@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"strings"
 	"time"
 
 	"github.com/charmbracelet/bubbles/textinput"
@@ -400,7 +401,7 @@ func (m Model) View() string {
 
 	// Show create room modal if in create mode
 	if m.focus == focusCreateRoom {
-		view = m.renderCreateRoomModal(view)
+		view = m.renderCreateRoomModal()
 	}
 
 	return view
@@ -503,14 +504,14 @@ func (m Model) renderMain() string {
 }
 
 func (m *Model) updateViewportContent() {
-	var content string
+	var content strings.Builder
 	for _, msg := range m.messages {
-		content += msg + "\n"
+		content.WriteString(msg + "\n")
 	}
-	m.viewport.SetContent(content)
+	m.viewport.SetContent(content.String())
 }
 
-func (m Model) renderCreateRoomModal(base string) string {
+func (m Model) renderCreateRoomModal() string {
 	modalStyle := lipgloss.NewStyle().
 		Border(lipgloss.RoundedBorder()).
 		BorderForeground(lipgloss.Color("62")).
@@ -566,13 +567,13 @@ func (m Model) renderHelp() string {
 
 	sep := descStyle.Render(" • ")
 
-	var result string
+	var result strings.Builder
 	for i, item := range items {
 		if i > 0 {
-			result += sep
+			result.WriteString(sep)
 		}
-		result += item
+		result.WriteString(item)
 	}
 
-	return "  " + result
+	return "  " + result.String()
 }
