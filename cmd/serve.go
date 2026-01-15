@@ -44,7 +44,7 @@ var serveCmd = &cobra.Command{
 		}()
 
 		quit := make(chan os.Signal, 1)
-		signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM)
+		signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM, os.Interrupt)
 		<-quit
 
 		ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
