@@ -2,6 +2,7 @@ package hub
 
 import (
 	"context"
+	"encoding/json"
 	"log"
 	"time"
 
@@ -44,6 +45,24 @@ func (c *Client) readPump(ctx context.Context, room *Room, msgRepo *repository.M
 		_, data, err := c.conn.Read(ctx)
 		if err != nil {
 			return
+		}
+
+		// Check whether the incoming frame is a typing event. If so,
+		// broadcast it to the room without persisting to the database.
+		var peek WireMessage
+		if json.Unmarshal(data, &peek) == nil && peek.Type == MessageTypeTyping {
+			typingWire := &WireMessage{
+				Type:      MessageTypeTyping,
+				Author:    c.Username,
+				Timestamp: time.Now(),
+			}
+			typingBytes, err := typingWire.Marshal()
+			if err != nil {
+				log.Println("failed to marshal typing event:", err)
+				continue
+			}
+			room.Broadcast(typingBytes, c)
+			continue
 		}
 
 		msg := &repository.Message{

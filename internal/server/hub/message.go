@@ -10,6 +10,7 @@ type MessageType string
 const (
 	MessageTypeChat   MessageType = "chat"
 	MessageTypeSystem MessageType = "system"
+	MessageTypeTyping MessageType = "typing"
 )
 
 type WireMessage struct {

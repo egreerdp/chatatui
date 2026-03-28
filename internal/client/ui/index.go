@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"sort"
 	"strings"
 	"time"
 
@@ -60,6 +61,8 @@ type Model struct {
 	connectedTo     string
 	state           connState
 	reconnectDelay  time.Duration
+	typingUsers     map[string]time.Time
+	lastTypingSent  time.Time
 }
 
 type (
@@ -74,6 +77,7 @@ type (
 	reconnectMsg   string
 )
 type incomingMsg string
+type typingMsg string // username of the person who is typing
 
 type wireMessage struct {
 	Type      string    `json:"type"`
@@ -109,6 +113,7 @@ func NewModel(cfg Config) *Model {
 		messages:        []string{},
 		focus:           focusInput,
 		reconnectDelay:  time.Second,
+		typingUsers:     make(map[string]time.Time),
 	}
 }
 
@@ -222,6 +227,11 @@ func (m *Model) listenForMessages() tea.Cmd {
 			return errMsg(err)
 		}
 
+		var wire wireMessage
+		if json.Unmarshal(data, &wire) == nil && wire.Type == "typing" {
+			return typingMsg(wire.Author)
+		}
+
 		return incomingMsg(formatWireMessage(data))
 	}
 }
@@ -231,6 +241,12 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 	switch msg := msg.(type) {
 	case tickMsg:
+		now := time.Now()
+		for user, t := range m.typingUsers {
+			if now.Sub(t) >= 4*time.Second {
+				delete(m.typingUsers, user)
+			}
+		}
 		return m, tea.Batch(m.fetchRooms, m.tickCmd())
 
 	case roomsMsg:
@@ -279,6 +295,15 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		m.messages = append(m.messages, string(msg))
 		m.updateViewportContent()
 		m.viewport.GotoBottom()
+		return m, m.listenForMessages()
+
+	case typingMsg:
+		if m.typingUsers == nil {
+			m.typingUsers = make(map[string]time.Time)
+		}
+		if author := string(msg); author != "" {
+			m.typingUsers[author] = time.Now()
+		}
 		return m, m.listenForMessages()
 
 	case reconnectMsg:
@@ -372,6 +397,16 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				}
 				return m, nil
 			}
+		default:
+			// Send a typing event when the user is actively typing in the input
+			// box. Debounced to at most once every 2 seconds.
+			if m.focus == focusInput && m.conn != nil &&
+				time.Since(m.lastTypingSent) > 2*time.Second &&
+				m.input.Value() != "" {
+				typingJSON := []byte(`{"type":"typing"}`)
+				_ = m.conn.Write(context.Background(), websocket.MessageText, typingJSON)
+				m.lastTypingSent = time.Now()
+			}
 		}
 
 	case tea.WindowSizeMsg:
@@ -387,7 +422,7 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 		headerHeight := 1
 		inputHeight := 3
-		viewportHeight := innerHeight - headerHeight - inputHeight
+		viewportHeight := innerHeight - headerHeight - inputHeight - 1 // -1 for typing indicator
 
 		if !m.ready {
 			m.viewport = viewport.New(mainWidth, viewportHeight)
@@ -553,10 +588,16 @@ func (m Model) renderMain() string {
 		inputStyle = inputStyle.BorderForeground(lipgloss.Color("62"))
 	}
 
+	typingStyle := lipgloss.NewStyle().
+		Foreground(lipgloss.Color("240")).
+		Italic(true).
+		PaddingLeft(1)
+
 	return lipgloss.JoinVertical(
 		lipgloss.Left,
 		header,
 		viewportStyle.Render(m.viewport.View()),
+		typingStyle.Render(m.typingLine()),
 		inputStyle.Render(m.input.View()),
 	)
 }
@@ -603,6 +644,28 @@ func (m Model) renderCreateRoomModal() string {
 	)
 
 	return overlay
+}
+
+func (m Model) typingLine() string {
+	var typers []string
+	now := time.Now()
+	for user, t := range m.typingUsers {
+		if now.Sub(t) < 4*time.Second {
+			typers = append(typers, user)
+		}
+	}
+	sort.Strings(typers)
+
+	switch len(typers) {
+	case 0:
+		return ""
+	case 1:
+		return typers[0] + " is typing..."
+	case 2:
+		return typers[0] + " and " + typers[1] + " are typing..."
+	default:
+		return "Several people are typing..."
+	}
 }
 
 func (m Model) renderHelp() string {
