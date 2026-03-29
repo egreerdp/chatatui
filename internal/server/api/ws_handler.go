@@ -54,7 +54,7 @@ func (h *WSHandler) Handle(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// TODO: we should not be creating here. We should have a seperate endpoint for that.
-	dbRoom, err := h.db.Rooms().GetOrCreateByUUID(roomUUID)
+	dbRoom, err := h.db.Rooms().GetByID(roomUUID)
 	if err != nil {
 		http.Error(w, "failed to get room", http.StatusInternalServerError)
 		return
@@ -78,7 +78,7 @@ func (h *WSHandler) Handle(w http.ResponseWriter, r *http.Request) {
 		log.Println("failed to add room member:", err)
 	}
 
-	client := hub.NewClient(conn, roomID, user.ID, dbRoom.ID, user.Name)
+	client := hub.NewClient(conn, user.ID, roomUUID, user.Name)
 	room.Add(client)
 	defer room.Remove(client)
 
@@ -87,7 +87,7 @@ func (h *WSHandler) Handle(w http.ResponseWriter, r *http.Request) {
 	client.Run(room, h.db.Messages())
 }
 
-func (h *WSHandler) sendHistory(client *hub.Client, roomID uint) {
+func (h *WSHandler) sendHistory(client *hub.Client, roomID uuid.UUID) {
 	messages, err := h.db.Messages().GetByRoom(roomID, h.messageHistoryLimit, 0)
 	if err != nil {
 		log.Println("failed to get message history:", err)
@@ -98,7 +98,7 @@ func (h *WSHandler) sendHistory(client *hub.Client, roomID uint) {
 	for i := len(messages) - 1; i >= 0; i-- {
 		wire := &hub.WireMessage{
 			Type:      hub.MessageTypeChat,
-			ID:        messages[i].UUID.String(),
+			ID:        messages[i].ID.String(),
 			Author:    messages[i].Sender.Name,
 			Content:   string(messages[i].Content),
 			Timestamp: messages[i].CreatedAt,

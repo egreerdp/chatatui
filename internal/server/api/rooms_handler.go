@@ -47,7 +47,7 @@ func (h *RoomsHandler) Create(w http.ResponseWriter, r *http.Request) {
 	}
 
 	resp := roomResponse{
-		ID:   room.UUID.String(),
+		ID:   room.ID.String(),
 		Name: room.Name,
 	}
 
@@ -67,10 +67,10 @@ func (h *RoomsHandler) List(w http.ResponseWriter, r *http.Request) {
 	for i, room := range rooms {
 		name := room.Name
 		if name == "" {
-			name = room.UUID.String()[:8]
+			name = room.ID.String()[:8]
 		}
 		resp[i] = roomResponse{
-			ID:   room.UUID.String(),
+			ID:   room.ID.String(),
 			Name: name,
 		}
 	}

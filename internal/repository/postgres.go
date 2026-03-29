@@ -18,6 +18,10 @@ func NewPostgresDB(dsn string) *PostgresDB {
 		panic("failed to connect database: " + err.Error())
 	}
 
+	// Drop old tables to allow clean migration from integer PKs to UUID PKs.
+	// This is acceptable during development; a proper migration will be needed for production.
+	db.Exec("DROP TABLE IF EXISTS room_members, messages, rooms, users CASCADE")
+
 	if err := db.AutoMigrate(&User{}, &Room{}, &Message{}); err != nil {
 		panic("failed to migrate database: " + err.Error())
 	}

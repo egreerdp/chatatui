@@ -6,8 +6,7 @@ import (
 )
 
 type Room struct {
-	gorm.Model
-	UUID    uuid.UUID `gorm:"type:uuid;uniqueIndex"`
+	BaseModel
 	Name    string
 	Members []User `gorm:"many2many:room_members;"`
 }
@@ -21,34 +20,12 @@ func NewRoomRepository(db *gorm.DB) *RoomRepository {
 }
 
 func (r *RoomRepository) Create(room *Room) error {
-	if room.UUID == uuid.Nil {
-		room.UUID = uuid.New()
-	}
 	return r.db.Create(room).Error
 }
 
-func (r *RoomRepository) GetByID(id uint) (*Room, error) {
+func (r *RoomRepository) GetByID(id uuid.UUID) (*Room, error) {
 	var room Room
-	err := r.db.Preload("Members").First(&room, id).Error
-	return &room, err
-}
-
-func (r *RoomRepository) GetByUUID(uid uuid.UUID) (*Room, error) {
-	var room Room
-	err := r.db.Preload("Members").Where("uuid = ?", uid).First(&room).Error
-	return &room, err
-}
-
-func (r *RoomRepository) GetOrCreateByUUID(uid uuid.UUID) (*Room, error) {
-	var room Room
-	err := r.db.Where("uuid = ?", uid).First(&room).Error
-	if err == gorm.ErrRecordNotFound {
-		room = Room{UUID: uid}
-		if err := r.db.Create(&room).Error; err != nil {
-			return nil, err
-		}
-		return &room, nil
-	}
+	err := r.db.Preload("Members").First(&room, "id = ?", id).Error
 	return &room, err
 }
 
@@ -66,14 +43,14 @@ func (r *RoomRepository) Update(room *Room) error {
 	return r.db.Save(room).Error
 }
 
-func (r *RoomRepository) Delete(id uint) error {
-	return r.db.Delete(&Room{}, id).Error
+func (r *RoomRepository) Delete(id uuid.UUID) error {
+	return r.db.Delete(&Room{}, "id = ?", id).Error
 }
 
-func (r *RoomRepository) AddMember(roomID, userID uint) error {
+func (r *RoomRepository) AddMember(roomID, userID uuid.UUID) error {
 	return r.db.Exec("INSERT INTO room_members (room_id, user_id) VALUES (?, ?) ON CONFLICT DO NOTHING", roomID, userID).Error
 }
 
-func (r *RoomRepository) RemoveMember(roomID, userID uint) error {
+func (r *RoomRepository) RemoveMember(roomID, userID uuid.UUID) error {
 	return r.db.Exec("DELETE FROM room_members WHERE room_id = ? AND user_id = ?", roomID, userID).Error
 }

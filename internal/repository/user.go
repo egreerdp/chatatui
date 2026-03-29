@@ -6,8 +6,7 @@ import (
 )
 
 type User struct {
-	gorm.Model
-	UUID   uuid.UUID `gorm:"type:uuid;uniqueIndex"`
+	BaseModel
 	Name   string
 	APIKey string `gorm:"uniqueIndex"`
 	Rooms  []Room `gorm:"many2many:room_members;"`
@@ -22,9 +21,6 @@ func NewUserRepository(db *gorm.DB) *UserRepository {
 }
 
 func (r *UserRepository) Create(user *User) error {
-	if user.UUID == uuid.Nil {
-		user.UUID = uuid.New()
-	}
 	return r.db.Create(user).Error
 }
 
@@ -34,16 +30,9 @@ func (r *UserRepository) GetByAPIKey(apiKey string) (*User, error) {
 	return &user, err
 }
 
-func (r *UserRepository) GetOrCreateByUUID(uid uuid.UUID, name string) (*User, error) {
+func (r *UserRepository) GetByID(id uuid.UUID) (*User, error) {
 	var user User
-	err := r.db.Where("uuid = ?", uid).First(&user).Error
-	if err == gorm.ErrRecordNotFound {
-		user = User{UUID: uid, Name: name}
-		if err := r.db.Create(&user).Error; err != nil {
-			return nil, err
-		}
-		return &user, nil
-	}
+	err := r.db.First(&user, "id = ?", id).Error
 	return &user, err
 }
 
@@ -60,6 +49,6 @@ func (r *UserRepository) Update(user *User) error {
 	return r.db.Save(user).Error
 }
 
-func (r *UserRepository) Delete(id uint) error {
-	return r.db.Delete(&User{}, id).Error
+func (r *UserRepository) Delete(id uuid.UUID) error {
+	return r.db.Delete(&User{}, "id = ?", id).Error
 }

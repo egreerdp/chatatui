@@ -7,7 +7,6 @@ import (
 	"net/http"
 
 	"github.com/egreerdp/chatatui/internal/repository"
-	"github.com/google/uuid"
 )
 
 type RegisterHandler struct {
@@ -45,7 +44,6 @@ func (h *RegisterHandler) Handle(w http.ResponseWriter, r *http.Request) {
 	}
 
 	user := &repository.User{
-		UUID:   uuid.New(),
 		Name:   req.Name,
 		APIKey: apiKey,
 	}

@@ -56,7 +56,7 @@ func (rl *RateLimiter) Middleware(next http.Handler) http.Handler {
 			return
 		}
 
-		key := fmt.Sprintf("%d", user.ID)
+		key := user.ID.String()
 
 		allowed, err := rl.isAllowed(r.Context(), key)
 		if err != nil {

@@ -8,24 +8,23 @@ import (
 
 	"github.com/coder/websocket"
 	"github.com/egreerdp/chatatui/internal/repository"
+	"github.com/google/uuid"
 )
 
 type Client struct {
 	conn     *websocket.Conn
-	roomID   string
 	send     chan []byte
-	UserID   uint
-	DBRoomID uint
+	UserID   uuid.UUID
+	RoomID   uuid.UUID
 	Username string
 }
 
-func NewClient(conn *websocket.Conn, roomID string, userID, dbRoomID uint, username string) *Client {
+func NewClient(conn *websocket.Conn, userID, roomID uuid.UUID, username string) *Client {
 	return &Client{
 		conn:     conn,
-		roomID:   roomID,
 		send:     make(chan []byte, 256),
 		UserID:   userID,
-		DBRoomID: dbRoomID,
+		RoomID:   roomID,
 		Username: username,
 	}
 }
@@ -47,8 +46,6 @@ func (c *Client) readPump(ctx context.Context, room *Room, msgRepo *repository.M
 			return
 		}
 
-		// Check whether the incoming frame is a typing event. If so,
-		// broadcast it to the room without persisting to the database.
 		var peek WireMessage
 		if json.Unmarshal(data, &peek) == nil && peek.Type == MessageTypeTyping {
 			typingWire := &WireMessage{
@@ -68,7 +65,7 @@ func (c *Client) readPump(ctx context.Context, room *Room, msgRepo *repository.M
 		msg := &repository.Message{
 			Content:  data,
 			SenderID: c.UserID,
-			RoomID:   c.DBRoomID,
+			RoomID:   c.RoomID,
 		}
 		if err := msgRepo.Create(msg); err != nil {
 			log.Println("failed to persist message:", err)
@@ -76,7 +73,7 @@ func (c *Client) readPump(ctx context.Context, room *Room, msgRepo *repository.M
 
 		wire := &WireMessage{
 			Type:    MessageTypeChat,
-			ID:      msg.UUID.String(),
+			ID:      msg.ID.String(),
 			Author:  c.Username,
 			Content: string(data),
 		}
@@ -96,7 +93,6 @@ func (c *Client) readPump(ctx context.Context, room *Room, msgRepo *repository.M
 	}
 }
 
-// TODO: we should probably log in here when we see errors
 func (c *Client) writePump(ctx context.Context) {
 	for {
 		select {
