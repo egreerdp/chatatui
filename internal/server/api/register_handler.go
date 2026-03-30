@@ -28,18 +28,18 @@ type registerResponse struct {
 func (h *RegisterHandler) Handle(w http.ResponseWriter, r *http.Request) {
 	var req registerRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		http.Error(w, "invalid request body", http.StatusBadRequest)
+		writeError(w, http.StatusBadRequest, "INVALID_BODY", "invalid request body")
 		return
 	}
 
 	if req.Name == "" {
-		http.Error(w, "name is required", http.StatusBadRequest)
+		writeError(w, http.StatusBadRequest, "NAME_REQUIRED", "name is required")
 		return
 	}
 
 	apiKey, err := generateAPIKey()
 	if err != nil {
-		http.Error(w, "failed to generate api key", http.StatusInternalServerError)
+		writeError(w, http.StatusInternalServerError, "INTERNAL_ERROR", "failed to generate api key")
 		return
 	}
 
@@ -49,7 +49,7 @@ func (h *RegisterHandler) Handle(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if err := h.db.Users().Create(user); err != nil {
-		http.Error(w, "failed to create user", http.StatusInternalServerError)
+		writeError(w, http.StatusInternalServerError, "INTERNAL_ERROR", "failed to create user")
 		return
 	}
 

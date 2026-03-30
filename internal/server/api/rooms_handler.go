@@ -28,12 +28,12 @@ type createRoomRequest struct {
 func (h *RoomsHandler) Create(w http.ResponseWriter, r *http.Request) {
 	var req createRoomRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		http.Error(w, "invalid request body", http.StatusBadRequest)
+		writeError(w, http.StatusBadRequest, "INVALID_BODY", "invalid request body")
 		return
 	}
 
 	if req.Name == "" {
-		http.Error(w, "room name is required", http.StatusBadRequest)
+		writeError(w, http.StatusBadRequest, "NAME_REQUIRED", "room name is required")
 		return
 	}
 
@@ -42,7 +42,7 @@ func (h *RoomsHandler) Create(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if err := h.db.Rooms().Create(room); err != nil {
-		http.Error(w, "failed to create room", http.StatusInternalServerError)
+		writeError(w, http.StatusInternalServerError, "INTERNAL_ERROR", "failed to create room")
 		return
 	}
 
@@ -59,7 +59,7 @@ func (h *RoomsHandler) Create(w http.ResponseWriter, r *http.Request) {
 func (h *RoomsHandler) List(w http.ResponseWriter, r *http.Request) {
 	rooms, err := h.db.Rooms().List(h.listLimit, 0)
 	if err != nil {
-		http.Error(w, "failed to list rooms", http.StatusInternalServerError)
+		writeError(w, http.StatusInternalServerError, "INTERNAL_ERROR", "failed to list rooms")
 		return
 	}
 

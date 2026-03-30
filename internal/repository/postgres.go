@@ -1,6 +1,8 @@
 package repository
 
 import (
+	"fmt"
+
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
 )
@@ -12,10 +14,10 @@ type PostgresDB struct {
 	messages *MessageRepository
 }
 
-func NewPostgresDB(dsn string) *PostgresDB {
+func NewPostgresDB(dsn string) (*PostgresDB, error) {
 	db, err := gorm.Open(postgres.Open(dsn), &gorm.Config{})
 	if err != nil {
-		panic("failed to connect database: " + err.Error())
+		return nil, fmt.Errorf("connecting to database: %w", err)
 	}
 
 	// Drop old tables to allow clean migration from integer PKs to UUID PKs.
@@ -23,7 +25,7 @@ func NewPostgresDB(dsn string) *PostgresDB {
 	db.Exec("DROP TABLE IF EXISTS room_members, messages, rooms, users CASCADE")
 
 	if err := db.AutoMigrate(&User{}, &Room{}, &Message{}); err != nil {
-		panic("failed to migrate database: " + err.Error())
+		return nil, fmt.Errorf("migrating database: %w", err)
 	}
 
 	return &PostgresDB{
@@ -31,7 +33,7 @@ func NewPostgresDB(dsn string) *PostgresDB {
 		users:    NewUserRepository(db),
 		rooms:    NewRoomRepository(db),
 		messages: NewMessageRepository(db),
-	}
+	}, nil
 }
 
 func (s *PostgresDB) Users() *UserRepository {

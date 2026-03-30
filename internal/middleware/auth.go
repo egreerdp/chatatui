@@ -2,6 +2,7 @@ package middleware
 
 import (
 	"context"
+	"encoding/json"
 	"net/http"
 	"strings"
 
@@ -17,7 +18,7 @@ func APIKeyAuth(users *repository.UserRepository) func(http.Handler) http.Handle
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			authHeader := r.Header.Get("Authorization")
 			if authHeader == "" {
-				http.Error(w, "authorization required", http.StatusUnauthorized)
+				writeJSONError(w, http.StatusUnauthorized, "AUTH_REQUIRED", "authorization required")
 				return
 			}
 
@@ -25,7 +26,7 @@ func APIKeyAuth(users *repository.UserRepository) func(http.Handler) http.Handle
 
 			user, err := users.GetByAPIKey(apiKey)
 			if err != nil {
-				http.Error(w, "invalid api key", http.StatusUnauthorized)
+				writeJSONError(w, http.StatusUnauthorized, "INVALID_API_KEY", "invalid api key")
 				return
 			}
 
@@ -38,4 +39,13 @@ func APIKeyAuth(users *repository.UserRepository) func(http.Handler) http.Handle
 func UserFromContext(ctx context.Context) *repository.User {
 	user, _ := ctx.Value(userContextKey).(*repository.User)
 	return user
+}
+
+func writeJSONError(w http.ResponseWriter, status int, code, message string) {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(status)
+	_ = json.NewEncoder(w).Encode(struct {
+		Error string `json:"error"`
+		Code  string `json:"code"`
+	}{Error: message, Code: code})
 }

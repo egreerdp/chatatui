@@ -38,15 +38,20 @@ var serveCmd = &cobra.Command{
 			slog.Warn("rate limiter disabled", "error", err)
 		}
 
-		database := repository.NewPostgresDB(cfg.DatabaseDSN)
+		database, err := repository.NewPostgresDB(cfg.DatabaseDSN)
+		if err != nil {
+			slog.Error("failed to initialize database", "error", err)
+			os.Exit(1)
+		}
+
 		handler := api.NewHandler(hub.NewHub(), database, cfg, rateLimiter)
 		srv := server.NewChatServer(handler, cfg.Port, database)
 
 		go func() {
 			slog.Info("server started", "addr", cfg.Port)
-			err := srv.Start()
-			if err != nil && !errors.Is(err, http.ErrServerClosed) {
-				panic(err)
+			if err := srv.Start(); err != nil && !errors.Is(err, http.ErrServerClosed) {
+				slog.Error("server failed", "error", err)
+				os.Exit(1)
 			}
 		}()
 
@@ -57,9 +62,9 @@ var serveCmd = &cobra.Command{
 		ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 		defer cancel()
 
-		err = srv.Stop(ctx)
-		if err != nil {
-			panic(err)
+		if err = srv.Stop(ctx); err != nil {
+			slog.Error("graceful shutdown failed", "error", err)
+			os.Exit(1)
 		}
 
 		slog.Info("server stopped")

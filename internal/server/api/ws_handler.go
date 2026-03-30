@@ -39,23 +39,23 @@ func NewWSHandler(h *hub.Hub, db *repository.PostgresDB, messageHistoryLimit int
 func (h *WSHandler) Handle(w http.ResponseWriter, r *http.Request) {
 	roomID := chi.URLParam(r, "roomID")
 	if roomID == "" {
-		http.Error(w, "room required", http.StatusBadRequest)
+		writeError(w, http.StatusBadRequest, "ROOM_REQUIRED", "room required")
 		return
 	}
 
 	roomUUID, err := uuid.Parse(roomID)
 	if err != nil {
-		http.Error(w, "invalid room id", http.StatusBadRequest)
+		writeError(w, http.StatusBadRequest, "INVALID_ROOM_ID", "invalid room id")
 		return
 	}
 
 	dbRoom, err := h.db.Rooms().GetByID(roomUUID)
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
-			http.Error(w, "room not found", http.StatusNotFound)
+			writeError(w, http.StatusNotFound, "ROOM_NOT_FOUND", "room not found")
 			return
 		}
-		http.Error(w, "failed to get room", http.StatusInternalServerError)
+		writeError(w, http.StatusInternalServerError, "INTERNAL_ERROR", "failed to get room")
 		return
 	}
 

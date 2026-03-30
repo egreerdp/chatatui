@@ -60,13 +60,13 @@ func (rl *RateLimiter) Middleware(next http.Handler) http.Handler {
 
 		allowed, err := rl.isAllowed(r.Context(), key)
 		if err != nil {
-			http.Error(w, "rate limit check failed", http.StatusInternalServerError)
+			writeJSONError(w, http.StatusInternalServerError, "INTERNAL_ERROR", "rate limit check failed")
 			return
 		}
 
 		if !allowed {
 			w.Header().Set("Retry-After", fmt.Sprintf("%d", rl.windowSecs))
-			http.Error(w, "rate limit exceeded", http.StatusTooManyRequests)
+			writeJSONError(w, http.StatusTooManyRequests, "RATE_LIMITED", "rate limit exceeded")
 			return
 		}
 
