@@ -1,7 +1,7 @@
 package hub
 
 import (
-	"log"
+	"log/slog"
 	"sync"
 	"sync/atomic"
 )
@@ -53,7 +53,7 @@ func (bp *BroadcastPool) Submit(job *broadcastJob) {
 	select {
 	case bp.workers[workerIdx] <- job:
 	default:
-		log.Println("Warning: Broadcast worker pool full, dropping message")
+		slog.Warn("broadcast worker pool full, dropping message", "worker_index", workerIdx)
 	}
 }
 

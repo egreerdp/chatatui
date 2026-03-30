@@ -3,7 +3,7 @@ package cmd
 import (
 	"context"
 	"errors"
-	"log"
+	"log/slog"
 	"net/http"
 	"os"
 	"os/signal"
@@ -26,9 +26,16 @@ var serveCmd = &cobra.Command{
 	Run: func(cmd *cobra.Command, args []string) {
 		cfg := config.LoadServerConfig()
 
+		logLevel := slog.LevelInfo
+		debug := os.Getenv("DEBUG")
+		if debug == "1" || debug == "true" {
+			logLevel = slog.LevelDebug
+		}
+		slog.SetDefault(slog.New(slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{Level: logLevel})))
+
 		rateLimiter, err := middleware.NewRateLimiter(cfg.RedisURL, cfg.RateLimitRequests, cfg.RateLimitWindowSecs)
 		if err != nil {
-			log.Printf("warning: rate limiter disabled: %v\n", err)
+			slog.Warn("rate limiter disabled", "error", err)
 		}
 
 		database := repository.NewPostgresDB(cfg.DatabaseDSN)
@@ -36,7 +43,7 @@ var serveCmd = &cobra.Command{
 		srv := server.NewChatServer(handler, cfg.Port, database)
 
 		go func() {
-			log.Printf("server running on %s\n", cfg.Port)
+			slog.Info("server started", "addr", cfg.Port)
 			err := srv.Start()
 			if err != nil && !errors.Is(err, http.ErrServerClosed) {
 				panic(err)
@@ -55,7 +62,7 @@ var serveCmd = &cobra.Command{
 			panic(err)
 		}
 
-		log.Println("stopped")
+		slog.Info("server stopped")
 	},
 }
 

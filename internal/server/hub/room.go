@@ -1,7 +1,7 @@
 package hub
 
 import (
-	"log"
+	"log/slog"
 	"sync"
 
 	"github.com/google/uuid"
@@ -46,7 +46,7 @@ func (r *Room) activatePool() {
 
 	r.broadcastPool = NewBroadcastPool(r.workerCount)
 	r.broadcastPool.Start()
-	log.Printf("Activated broadcast pool for room %s (workers=%d)", r.ID, r.workerCount)
+	slog.Info("activated broadcast pool", "room_id", r.ID, "workers", r.workerCount)
 }
 
 func (r *Room) Remove(c *Client) {

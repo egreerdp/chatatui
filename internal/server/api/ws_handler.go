@@ -2,9 +2,8 @@ package api
 
 import (
 	"errors"
-	"log"
+	"log/slog"
 	"net/http"
-	"os"
 	"time"
 
 	"github.com/coder/websocket"
@@ -23,15 +22,10 @@ type WSHandler struct {
 }
 
 func NewWSHandler(h *hub.Hub, db *repository.PostgresDB, messageHistoryLimit int) *WSHandler {
-	go func() { // TODO: create a leveled logger, such as slog or zap.
-		debug := os.Getenv("DEBUG")
-		if debug != "true" && debug != "1" {
-			return
-		}
-
+	go func() {
 		for {
 			time.Sleep(time.Second * 5)
-			log.Println("Room Count:", len(h.Rooms))
+			slog.Debug("hub status", "room_count", len(h.Rooms))
 		}
 	}()
 
@@ -67,7 +61,7 @@ func (h *WSHandler) Handle(w http.ResponseWriter, r *http.Request) {
 
 	conn, err := websocket.Accept(w, r, &websocket.AcceptOptions{})
 	if err != nil {
-		log.Println("err:", err)
+		slog.Error("failed to accept websocket", "error", err)
 		return
 	}
 	defer func() { _ = conn.CloseNow() }()
@@ -80,7 +74,7 @@ func (h *WSHandler) Handle(w http.ResponseWriter, r *http.Request) {
 
 	user := middleware.UserFromContext(r.Context())
 	if err := h.db.Rooms().AddMember(dbRoom.ID, user.ID); err != nil {
-		log.Println("failed to add room member:", err)
+		slog.Error("failed to add room member", "error", err, "room_id", dbRoom.ID, "user_id", user.ID)
 	}
 
 	client := hub.NewClient(conn, user.ID, roomUUID, user.Name)
@@ -95,7 +89,7 @@ func (h *WSHandler) Handle(w http.ResponseWriter, r *http.Request) {
 func (h *WSHandler) sendHistory(client *hub.Client, roomID uuid.UUID) {
 	messages, err := h.db.Messages().GetByRoom(roomID, h.messageHistoryLimit, 0)
 	if err != nil {
-		log.Println("failed to get message history:", err)
+		slog.Error("failed to get message history", "error", err, "room_id", roomID)
 		return
 	}
 
@@ -110,7 +104,7 @@ func (h *WSHandler) sendHistory(client *hub.Client, roomID uuid.UUID) {
 		}
 		wireBytes, err := wire.Marshal()
 		if err != nil {
-			log.Println("failed to marshal history message:", err)
+			slog.Error("failed to marshal history message", "error", err, "room_id", roomID)
 			continue
 		}
 		client.SendRaw(wireBytes)

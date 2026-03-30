@@ -3,7 +3,7 @@ package hub
 import (
 	"context"
 	"encoding/json"
-	"log"
+	"log/slog"
 	"time"
 
 	"github.com/coder/websocket"
@@ -55,7 +55,7 @@ func (c *Client) readPump(ctx context.Context, room *Room, msgRepo *repository.M
 			}
 			typingBytes, err := typingWire.Marshal()
 			if err != nil {
-				log.Println("failed to marshal typing event:", err)
+				slog.Error("failed to marshal typing event", "error", err, "user_id", c.UserID)
 				continue
 			}
 			room.Broadcast(typingBytes, c)
@@ -68,7 +68,7 @@ func (c *Client) readPump(ctx context.Context, room *Room, msgRepo *repository.M
 			RoomID:   c.RoomID,
 		}
 		if err := msgRepo.Create(msg); err != nil {
-			log.Println("failed to persist message:", err)
+			slog.Error("failed to persist message", "error", err, "room_id", c.RoomID, "user_id", c.UserID)
 		}
 
 		wire := &WireMessage{
@@ -85,7 +85,7 @@ func (c *Client) readPump(ctx context.Context, room *Room, msgRepo *repository.M
 
 		wireBytes, err := wire.Marshal()
 		if err != nil {
-			log.Println("failed to marshal message:", err)
+			slog.Error("failed to marshal message", "error", err, "room_id", c.RoomID, "user_id", c.UserID)
 			continue
 		}
 
@@ -113,7 +113,7 @@ func (c *Client) writePump(ctx context.Context) {
 func (c *Client) Send(msg []byte) {
 	select {
 	case c.send <- msg:
-		log.Println(string(msg))
+		slog.Debug("message sent to client", "user_id", c.UserID, "room_id", c.RoomID)
 	default:
 	}
 }
