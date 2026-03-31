@@ -97,7 +97,10 @@ type (
 	tickMsg        time.Time
 	reconnectMsg   string
 )
-type incomingMsg string
+type incomingMsg struct {
+	formatted string
+	author    string
+}
 type typingMsg string // username of the person who is typing
 
 type wireMessage struct {
@@ -249,11 +252,14 @@ func (m *Model) listenForMessages() tea.Cmd {
 		}
 
 		var wire wireMessage
-		if json.Unmarshal(data, &wire) == nil && wire.Type == "typing" {
-			return typingMsg(wire.Author)
+		if err := json.Unmarshal(data, &wire); err == nil {
+			if wire.Type == "typing" {
+				return typingMsg(wire.Author)
+			}
+			return incomingMsg{formatted: formatWireMessage(data), author: wire.Author}
 		}
 
-		return incomingMsg(formatWireMessage(data))
+		return incomingMsg{formatted: string(data)}
 	}
 }
 
@@ -313,7 +319,8 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		return m, m.listenForMessages()
 
 	case incomingMsg:
-		m.messages = append(m.messages, string(msg))
+		delete(m.typingUsers, msg.author)
+		m.messages = append(m.messages, msg.formatted)
 		m.updateViewportContent()
 		m.viewport.GotoBottom()
 		return m, m.listenForMessages()
