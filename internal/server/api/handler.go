@@ -5,7 +5,6 @@ import (
 
 	"github.com/EwanGreer/chatatui/internal/config"
 	"github.com/EwanGreer/chatatui/internal/middleware"
-	"github.com/EwanGreer/chatatui/internal/repository"
 	"github.com/EwanGreer/chatatui/internal/server/hub"
 	"github.com/EwanGreer/chatatui/internal/service"
 	"github.com/go-chi/chi/v5"
@@ -23,16 +22,16 @@ type ChatService interface {
 type Handler struct {
 	Router          chi.Router
 	Hub             *hub.Hub
-	DB              *repository.PostgresDB
 	ChatService     ChatService
 	Config          config.ServerConfig
 	RateLimiter     *middleware.RateLimiter
+	userLookup      middleware.UserLookup
 	wsHandler       *WSHandler
 	registerHandler *RegisterHandler
 	roomsHandler    *RoomsHandler
 }
 
-func NewHandler(h *hub.Hub, db *repository.PostgresDB, svc ChatService, cfg config.ServerConfig, rl *middleware.RateLimiter) *Handler {
+func NewHandler(h *hub.Hub, users middleware.UserLookup, userStore UserStore, roomStore RoomStore, svc ChatService, cfg config.ServerConfig, rl *middleware.RateLimiter) *Handler {
 	r := chi.NewRouter()
 	r.Use(chimw.Logger)
 	r.Use(chimw.Recoverer)
@@ -41,13 +40,13 @@ func NewHandler(h *hub.Hub, db *repository.PostgresDB, svc ChatService, cfg conf
 	return &Handler{
 		Router:          r,
 		Hub:             h,
-		DB:              db,
 		ChatService:     svc,
 		Config:          cfg,
 		RateLimiter:     rl,
+		userLookup:      users,
 		wsHandler:       NewWSHandler(h, svc, cfg.MessageHistoryLimit),
-		registerHandler: NewRegisterHandler(db),
-		roomsHandler:    NewRoomsHandler(db, cfg.RoomListLimit),
+		registerHandler: NewRegisterHandler(userStore),
+		roomsHandler:    NewRoomsHandler(roomStore, cfg.RoomListLimit),
 	}
 }
 
@@ -56,7 +55,7 @@ func (h *Handler) Routes() chi.Router {
 
 	h.Router.Group(func(r chi.Router) {
 		r.Use(
-			middleware.APIKeyAuth(h.DB.Users()),
+			middleware.APIKeyAuth(h.userLookup),
 			h.RateLimiter.Middleware,
 		)
 

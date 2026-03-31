@@ -46,7 +46,7 @@ var serveCmd = &cobra.Command{
 		}
 
 		svc := service.NewChatService(database.Rooms(), database.Messages())
-		handler := api.NewHandler(hub.NewHub(), database, svc, cfg, rateLimiter)
+		handler := api.NewHandler(hub.NewHub(), database.Users(), database.Users(), database.Rooms(), svc, cfg, rateLimiter)
 		srv := server.NewChatServer(handler, cfg.Addr, database)
 
 		go func() {

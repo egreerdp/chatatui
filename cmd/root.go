@@ -34,13 +34,18 @@ var rootCmd = &cobra.Command{
 			APIKey:     viper.GetString("api_key"),
 		}
 
+		if viper.ConfigFileUsed() == "" {
+			fmt.Fprintln(os.Stderr, "error: no config file found — run 'chatatui init' first")
+			os.Exit(1)
+		}
+
 		if cfg.ServerAddr == "" {
-			fmt.Fprintln(os.Stderr, "error: 'host' not set in config file")
+			fmt.Fprintln(os.Stderr, "error: 'host' not set — edit your config file to point at the server")
 			os.Exit(1)
 		}
 
 		if cfg.APIKey == "" {
-			fmt.Fprintln(os.Stderr, "error: 'api_key' not set in config file")
+			fmt.Fprintln(os.Stderr, "error: 'api_key' not set — run 'chatatui register <name>' to register")
 			os.Exit(1)
 		}
 

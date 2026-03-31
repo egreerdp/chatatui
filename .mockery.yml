@@ -13,13 +13,16 @@ require-template-schema-exists: true
 template: testify
 template-schema: '{{.Template}}.schema.json'
 packages:
-  github.com/egreerdp/chatatui/internal/service:
+  github.com/EwanGreer/chatatui/internal/service:
     interfaces:
       RoomStore:
       MessageStore:
-  github.com/egreerdp/chatatui/internal/middleware:
+  github.com/EwanGreer/chatatui/internal/middleware:
     interfaces:
       RateLimitCache:
-  github.com/egreerdp/chatatui/internal/server/api:
+      UserLookup:
+  github.com/EwanGreer/chatatui/internal/server/api:
     interfaces:
       ChatService:
+      UserStore:
+      RoomStore:

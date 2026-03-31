@@ -9,12 +9,16 @@ import (
 	"github.com/EwanGreer/chatatui/internal/repository"
 )
 
-type RegisterHandler struct {
-	db *repository.PostgresDB
+type UserStore interface {
+	Create(user *repository.User) error
 }
 
-func NewRegisterHandler(db *repository.PostgresDB) *RegisterHandler {
-	return &RegisterHandler{db: db}
+type RegisterHandler struct {
+	users UserStore
+}
+
+func NewRegisterHandler(users UserStore) *RegisterHandler {
+	return &RegisterHandler{users: users}
 }
 
 type registerRequest struct {
@@ -48,7 +52,7 @@ func (h *RegisterHandler) Handle(w http.ResponseWriter, r *http.Request) {
 		APIKey: repository.HashAPIKey(apiKey),
 	}
 
-	if err := h.db.Users().Create(user); err != nil {
+	if err := h.users.Create(user); err != nil {
 		writeError(w, http.StatusInternalServerError, "INTERNAL_ERROR", "failed to create user")
 		return
 	}

@@ -13,7 +13,11 @@ type contextKey string
 
 const userContextKey contextKey = "user"
 
-func APIKeyAuth(users *repository.UserRepository) func(http.Handler) http.Handler {
+type UserLookup interface {
+	GetByAPIKey(apiKey string) (*repository.User, error)
+}
+
+func APIKeyAuth(users UserLookup) func(http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			authHeader := r.Header.Get("Authorization")

@@ -7,13 +7,18 @@ import (
 	"github.com/EwanGreer/chatatui/internal/repository"
 )
 
+type RoomStore interface {
+	Create(room *repository.Room) error
+	List(limit, offset int) ([]repository.Room, error)
+}
+
 type RoomsHandler struct {
-	db        *repository.PostgresDB
+	rooms     RoomStore
 	listLimit int
 }
 
-func NewRoomsHandler(db *repository.PostgresDB, listLimit int) *RoomsHandler {
-	return &RoomsHandler{db: db, listLimit: listLimit}
+func NewRoomsHandler(rooms RoomStore, listLimit int) *RoomsHandler {
+	return &RoomsHandler{rooms: rooms, listLimit: listLimit}
 }
 
 type roomResponse struct {
@@ -41,7 +46,7 @@ func (h *RoomsHandler) Create(w http.ResponseWriter, r *http.Request) {
 		Name: req.Name,
 	}
 
-	if err := h.db.Rooms().Create(room); err != nil {
+	if err := h.rooms.Create(room); err != nil {
 		writeError(w, http.StatusInternalServerError, "INTERNAL_ERROR", "failed to create room")
 		return
 	}
@@ -57,7 +62,7 @@ func (h *RoomsHandler) Create(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *RoomsHandler) List(w http.ResponseWriter, r *http.Request) {
-	rooms, err := h.db.Rooms().List(h.listLimit, 0)
+	rooms, err := h.rooms.List(h.listLimit, 0)
 	if err != nil {
 		writeError(w, http.StatusInternalServerError, "INTERNAL_ERROR", "failed to list rooms")
 		return
