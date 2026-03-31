@@ -8,7 +8,6 @@ import (
 
 	"github.com/coder/websocket"
 	"github.com/egreerdp/chatatui/internal/middleware"
-	"github.com/egreerdp/chatatui/internal/service"
 	"github.com/egreerdp/chatatui/internal/server/hub"
 	"github.com/go-chi/chi/v5"
 	"github.com/google/uuid"
@@ -17,11 +16,11 @@ import (
 
 type WSHandler struct {
 	hub                 *hub.Hub
-	svc                 service.ChatService
+	svc                 ChatService
 	messageHistoryLimit int
 }
 
-func NewWSHandler(h *hub.Hub, svc service.ChatService, messageHistoryLimit int) *WSHandler {
+func NewWSHandler(h *hub.Hub, svc ChatService, messageHistoryLimit int) *WSHandler {
 	go func() {
 		for {
 			time.Sleep(time.Second * 5)

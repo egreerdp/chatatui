@@ -1,20 +1,30 @@
 package api
 
 import (
+	"time"
+
 	"github.com/egreerdp/chatatui/internal/config"
 	"github.com/egreerdp/chatatui/internal/middleware"
 	"github.com/egreerdp/chatatui/internal/repository"
-	"github.com/egreerdp/chatatui/internal/service"
 	"github.com/egreerdp/chatatui/internal/server/hub"
+	"github.com/egreerdp/chatatui/internal/service"
 	"github.com/go-chi/chi/v5"
 	chimw "github.com/go-chi/chi/v5/middleware"
+	"github.com/google/uuid"
 )
+
+type ChatService interface {
+	GetRoom(id uuid.UUID) (*service.RoomInfo, error)
+	AddRoomMember(roomID, userID uuid.UUID) error
+	GetMessageHistory(roomID uuid.UUID, limit, offset int) ([]service.MessageInfo, error)
+	PersistMessage(content []byte, senderID, roomID uuid.UUID) (uuid.UUID, time.Time, error)
+}
 
 type Handler struct {
 	Router      chi.Router
 	Hub         *hub.Hub
 	DB          *repository.PostgresDB
-	ChatService service.ChatService
+	ChatService ChatService
 	Config      config.ServerConfig
 	RateLimiter *middleware.RateLimiter
 }

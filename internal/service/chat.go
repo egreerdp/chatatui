@@ -7,16 +7,16 @@ import (
 	"github.com/google/uuid"
 )
 
-type chatService struct {
+type ChatService struct {
 	rooms    *repository.RoomRepository
 	messages *repository.MessageRepository
 }
 
-func NewChatService(rooms *repository.RoomRepository, messages *repository.MessageRepository) ChatService {
-	return &chatService{rooms: rooms, messages: messages}
+func NewChatService(rooms *repository.RoomRepository, messages *repository.MessageRepository) *ChatService {
+	return &ChatService{rooms: rooms, messages: messages}
 }
 
-func (s *chatService) GetRoom(id uuid.UUID) (*RoomInfo, error) {
+func (s *ChatService) GetRoom(id uuid.UUID) (*RoomInfo, error) {
 	room, err := s.rooms.GetByID(id)
 	if err != nil {
 		return nil, err
@@ -24,11 +24,11 @@ func (s *chatService) GetRoom(id uuid.UUID) (*RoomInfo, error) {
 	return &RoomInfo{ID: room.ID, Name: room.Name}, nil
 }
 
-func (s *chatService) AddRoomMember(roomID, userID uuid.UUID) error {
+func (s *ChatService) AddRoomMember(roomID, userID uuid.UUID) error {
 	return s.rooms.AddMember(roomID, userID)
 }
 
-func (s *chatService) GetMessageHistory(roomID uuid.UUID, limit, offset int) ([]MessageInfo, error) {
+func (s *ChatService) GetMessageHistory(roomID uuid.UUID, limit, offset int) ([]MessageInfo, error) {
 	messages, err := s.messages.GetByRoom(roomID, limit, offset)
 	if err != nil {
 		return nil, err
@@ -46,7 +46,7 @@ func (s *chatService) GetMessageHistory(roomID uuid.UUID, limit, offset int) ([]
 	return infos, nil
 }
 
-func (s *chatService) PersistMessage(content []byte, senderID, roomID uuid.UUID) (uuid.UUID, time.Time, error) {
+func (s *ChatService) PersistMessage(content []byte, senderID, roomID uuid.UUID) (uuid.UUID, time.Time, error) {
 	msg := &repository.Message{
 		Content:  content,
 		SenderID: senderID,
