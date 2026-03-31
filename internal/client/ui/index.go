@@ -305,8 +305,16 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		return m, nil
 
 	case roomCreatedMsg:
-		m.rooms = append([]Room{Room(msg)}, m.rooms...)
-		m.roomIndex = 0
+		m.rooms = append(m.rooms, Room(msg))
+		sort.Slice(m.rooms, func(i, j int) bool {
+			return m.rooms[i].Name < m.rooms[j].Name
+		})
+		for i, r := range m.rooms {
+			if r.ID == msg.ID {
+				m.roomIndex = i
+				break
+			}
+		}
 		m.setFocus(focusRooms)
 		m.createRoomInput.Reset()
 		return m, m.connectToRoom(msg.ID)
