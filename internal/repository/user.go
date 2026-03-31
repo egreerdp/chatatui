@@ -1,9 +1,17 @@
 package repository
 
 import (
+	"crypto/sha256"
+	"encoding/hex"
+
 	"github.com/google/uuid"
 	"gorm.io/gorm"
 )
+
+func HashAPIKey(key string) string {
+	sum := sha256.Sum256([]byte(key))
+	return hex.EncodeToString(sum[:])
+}
 
 type User struct {
 	BaseModel
@@ -26,7 +34,7 @@ func (r *UserRepository) Create(user *User) error {
 
 func (r *UserRepository) GetByAPIKey(apiKey string) (*User, error) {
 	var user User
-	err := r.db.Where("api_key = ?", apiKey).First(&user).Error
+	err := r.db.Where("api_key = ?", HashAPIKey(apiKey)).First(&user).Error
 	return &user, err
 }
 

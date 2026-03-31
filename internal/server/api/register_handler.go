@@ -45,7 +45,7 @@ func (h *RegisterHandler) Handle(w http.ResponseWriter, r *http.Request) {
 
 	user := &repository.User{
 		Name:   req.Name,
-		APIKey: apiKey,
+		APIKey: repository.HashAPIKey(apiKey),
 	}
 
 	if err := h.db.Users().Create(user); err != nil {

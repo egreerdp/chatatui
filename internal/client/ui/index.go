@@ -44,6 +44,27 @@ type Config struct {
 	APIKey     string
 }
 
+func (c Config) httpURL(path string) string {
+	base := c.ServerAddr
+	if !strings.HasPrefix(base, "http://") && !strings.HasPrefix(base, "https://") {
+		base = "http://" + base
+	}
+	return base + path
+}
+
+func (c Config) wsURL(path string) string {
+	base := c.ServerAddr
+	switch {
+	case strings.HasPrefix(base, "https://"):
+		base = "wss://" + strings.TrimPrefix(base, "https://")
+	case strings.HasPrefix(base, "http://"):
+		base = "ws://" + strings.TrimPrefix(base, "http://")
+	default:
+		base = "ws://" + base
+	}
+	return base + path
+}
+
 type Model struct {
 	config          Config
 	viewport        viewport.Model
@@ -118,7 +139,7 @@ func NewModel(cfg Config) *Model {
 }
 
 func (m Model) fetchRooms() tea.Msg {
-	url := fmt.Sprintf("http://%s/rooms", m.config.ServerAddr)
+	url := m.config.httpURL("/rooms")
 
 	req, err := http.NewRequest("GET", url, nil)
 	if err != nil {
@@ -146,7 +167,7 @@ func (m Model) fetchRooms() tea.Msg {
 
 func (m Model) createRoom(name string) tea.Cmd {
 	return func() tea.Msg {
-		url := fmt.Sprintf("http://%s/rooms", m.config.ServerAddr)
+		url := m.config.httpURL("/rooms")
 
 		payload := map[string]string{"name": name}
 		body, err := json.Marshal(payload)
@@ -196,7 +217,7 @@ func (m *Model) connectToRoom(roomID string) tea.Cmd {
 			_ = m.conn.Close(websocket.StatusNormalClosure, "switching rooms")
 		}
 
-		url := fmt.Sprintf("ws://%s/ws/%s", m.config.ServerAddr, roomID)
+		url := m.config.wsURL("/ws/" + roomID)
 
 		ctx := context.Background()
 		conn, _, err := websocket.Dial(ctx, url, &websocket.DialOptions{

@@ -1,6 +1,6 @@
 # Client settings
 host = "localhost:8080"
-api_key = "09e0d4697b31c48f49114abce33233f6ccd4ee81b2f20940fb6ce3b5fc8a62a9"
+api_key = "d321165d6c3e52e73cd725605f3a87d4c4f2bd6eb4ee219be703d99b073ca5bc"
 
 # Server settings
 [server]
