@@ -45,10 +45,10 @@ var serveCmd = &cobra.Command{
 		}
 
 		handler := api.NewHandler(hub.NewHub(), database, cfg, rateLimiter)
-		srv := server.NewChatServer(handler, cfg.Port, database)
+		srv := server.NewChatServer(handler, cfg.Addr, database)
 
 		go func() {
-			slog.Info("server started", "addr", cfg.Port)
+			slog.Info("server started", "addr", cfg.Addr)
 			if err := srv.Start(); err != nil && !errors.Is(err, http.ErrServerClosed) {
 				slog.Error("server failed", "error", err)
 				os.Exit(1)

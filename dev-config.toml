@@ -4,7 +4,7 @@ api_key = "fe7f47d33e7ac69181692f95473f17161865da9eac71a0523e7707d4dd83b427"
 
 # Server settings
 [server]
-port = ":8080"
+addr = ":8080"
 database_dsn = "postgres://root:password@database:5432/chatatui?sslmode=disable"
 redis_url = "redis://redis:6379"
 message_history_limit = 50
