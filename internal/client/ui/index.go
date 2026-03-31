@@ -283,6 +283,9 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			oldSelectedID = m.rooms[m.roomIndex].ID
 		}
 
+		sort.Slice(msg, func(i, j int) bool {
+			return msg[i].Name < msg[j].Name
+		})
 		m.rooms = msg
 
 		// Try to keep the same room selected
