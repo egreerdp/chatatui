@@ -16,7 +16,7 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	case tickMsg:
 		now := time.Now()
 		for user, t := range m.typingUsers {
-			if now.Sub(t) >= 4*time.Second {
+			if now.Sub(t) >= typingUserTTL {
 				delete(m.typingUsers, user)
 			}
 		}
@@ -83,9 +83,6 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		return m, m.listenForMessages()
 
 	case typingMsg:
-		if m.typingUsers == nil {
-			m.typingUsers = make(map[string]time.Time)
-		}
 		if author := string(msg); author != "" {
 			m.typingUsers[author] = time.Now()
 		}
@@ -242,6 +239,19 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	}
 
 	return m, tea.Batch(cmds...)
+}
+
+func (m *Model) shouldSendTyping() bool {
+	if m.focus != focusInput {
+		return false
+	}
+	if m.conn == nil {
+		return false
+	}
+	if time.Since(m.lastTypingSent) <= 2*time.Second {
+		return false
+	}
+	return m.input.Value() != ""
 }
 
 func (m *Model) setFocus(f focus) {

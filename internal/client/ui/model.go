@@ -10,6 +10,8 @@ import (
 	"github.com/coder/websocket"
 )
 
+const typingUserTTL = 4 * time.Second
+
 type focus int
 
 const (

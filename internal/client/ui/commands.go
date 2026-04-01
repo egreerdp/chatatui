@@ -138,19 +138,6 @@ func (m *Model) listenForMessages() tea.Cmd {
 	}
 }
 
-func (m *Model) shouldSendTyping() bool {
-	if m.focus != focusInput {
-		return false
-	}
-	if m.conn == nil {
-		return false
-	}
-	if time.Since(m.lastTypingSent) <= 2*time.Second {
-		return false
-	}
-	return m.input.Value() != ""
-}
-
 func sendMessageCmd(conn *websocket.Conn, text string) tea.Cmd {
 	return func() tea.Msg {
 		if err := conn.Write(context.Background(), websocket.MessageText, []byte(text)); err != nil {

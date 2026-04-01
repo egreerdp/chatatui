@@ -172,7 +172,7 @@ func (m Model) typingLine() string {
 	var typers []string
 	now := time.Now()
 	for user, t := range m.typingUsers {
-		if now.Sub(t) < 4*time.Second {
+		if now.Sub(t) < typingUserTTL {
 			typers = append(typers, user)
 		}
 	}
