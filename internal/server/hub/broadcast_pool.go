@@ -3,7 +3,6 @@ package hub
 import (
 	"log/slog"
 	"sync"
-	"sync/atomic"
 )
 
 type broadcastJob struct {
@@ -14,7 +13,6 @@ type broadcastJob struct {
 type BroadcastPool struct {
 	workers     []chan *broadcastJob
 	workerCount int
-	nextWorker  uint32
 	wg          sync.WaitGroup
 }
 
@@ -47,13 +45,25 @@ func (bp *BroadcastPool) worker(jobChan chan *broadcastJob) {
 	}
 }
 
+// Submit shards the job's client list across all workers so that a single
+// large room fans out in parallel rather than being handled by one worker.
 func (bp *BroadcastPool) Submit(job *broadcastJob) {
-	workerIdx := atomic.AddUint32(&bp.nextWorker, 1) % uint32(bp.workerCount)
+	if len(job.clients) == 0 {
+		return
+	}
 
-	select {
-	case bp.workers[workerIdx] <- job:
-	default:
-		slog.Warn("broadcast worker pool full, dropping message", "worker_index", workerIdx)
+	chunkSize := max((len(job.clients)+bp.workerCount-1)/bp.workerCount, 1)
+	for i, workerIdx := 0, 0; i < len(job.clients); i, workerIdx = i+chunkSize, workerIdx+1 {
+		end := min(i+chunkSize, len(job.clients))
+		sub := &broadcastJob{
+			message: job.message,
+			clients: job.clients[i:end],
+		}
+		select {
+		case bp.workers[workerIdx] <- sub:
+		default:
+			slog.Warn("broadcast worker pool full, dropping message", "worker_index", workerIdx)
+		}
 	}
 }
 

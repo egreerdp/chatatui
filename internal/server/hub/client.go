@@ -137,5 +137,6 @@ func (c *Client) SendRaw(msg []byte) {
 	select {
 	case c.send <- msg:
 	default:
+		slog.Warn("client send buffer full, dropping message", "user_id", c.UserID, "room_id", c.RoomID)
 	}
 }

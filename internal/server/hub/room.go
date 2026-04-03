@@ -61,13 +61,16 @@ func (r *Room) Broadcast(msg []byte, sender *Client) {
 	poolEnabled := r.broadcastPool != nil
 
 	if !poolEnabled {
+		clientSnapshot := make([]*Client, 0, len(r.clients))
 		for client := range r.clients {
-			if client == sender {
-				continue
+			if client != sender {
+				clientSnapshot = append(clientSnapshot, client)
 			}
-			client.SendRaw(msg)
 		}
 		r.mu.RUnlock()
+		for _, client := range clientSnapshot {
+			client.SendRaw(msg)
+		}
 		return
 	}
 

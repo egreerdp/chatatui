@@ -5,10 +5,11 @@ package cmd
 
 import (
 	"fmt"
+	"log"
 	"os"
 
-	tea "github.com/charmbracelet/bubbletea"
 	"github.com/EwanGreer/chatatui/internal/client/ui"
+	tea "github.com/charmbracelet/bubbletea"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 )
@@ -82,7 +83,7 @@ func initConfig() {
 
 	viper.AutomaticEnv()
 
-	if err := viper.ReadInConfig(); err == nil {
-		fmt.Fprintln(os.Stderr, "Using config file:", viper.ConfigFileUsed())
+	if err := viper.ReadInConfig(); err != nil {
+		log.Fatal("could not load config", "error", err)
 	}
 }
