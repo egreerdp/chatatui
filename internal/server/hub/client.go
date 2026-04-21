@@ -54,25 +54,25 @@ func (c *Client) readPump(ctx context.Context, room *Room, persister MessagePers
 		}
 
 		if len(data) > limits.MaxMessageLength {
-			errWire := &WireMessage{
+			errMsg := &Message{
 				Type:      MessageTypeError,
 				Content:   fmt.Sprintf("message too long (max %d characters)", limits.MaxMessageLength),
 				Timestamp: time.Now(),
 			}
-			if errBytes, err := errWire.Marshal(); err == nil {
+			if errBytes, err := errMsg.Marshal(); err == nil {
 				c.Send(errBytes)
 			}
 			continue
 		}
 
-		var peek WireMessage
+		var peek Message
 		if json.Unmarshal(data, &peek) == nil && peek.Type == MessageTypeTyping {
-			typingWire := &WireMessage{
+			typingMsg := &Message{
 				Type:      MessageTypeTyping,
 				Author:    c.Username,
 				Timestamp: time.Now(),
 			}
-			typingBytes, err := typingWire.Marshal()
+			typingBytes, err := typingMsg.Marshal()
 			if err != nil {
 				slog.Error("failed to marshal typing event", "error", err, "user_id", c.UserID)
 				continue
@@ -86,7 +86,7 @@ func (c *Client) readPump(ctx context.Context, room *Room, persister MessagePers
 			slog.Error("failed to persist message", "error", err, "room_id", c.RoomID, "user_id", c.UserID)
 		}
 
-		wire := &WireMessage{
+		wire := &Message{
 			Type:    MessageTypeChat,
 			ID:      msgID.String(),
 			Author:  c.Username,

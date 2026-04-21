@@ -15,16 +15,16 @@ import (
 )
 
 type WSHandler struct {
-	hub                 *hub.Hub
+	hub                 RoomHub
 	svc                 ChatService
 	messageHistoryLimit int
 }
 
-func NewWSHandler(h *hub.Hub, svc ChatService, messageHistoryLimit int) *WSHandler {
+func NewWSHandler(h RoomHub, svc ChatService, messageHistoryLimit int) *WSHandler {
 	go func() {
 		for {
 			time.Sleep(time.Second * 5)
-			slog.Debug("hub status", "room_count", len(h.Rooms))
+			slog.Debug("hub status", "room_count", h.ActiveCount())
 		}
 	}()
 
@@ -65,18 +65,10 @@ func (h *WSHandler) Handle(w http.ResponseWriter, r *http.Request) {
 	}
 	defer func() { _ = conn.CloseNow() }()
 
-	room, err := h.hub.GetRoom(roomUUID)
+	room, err := h.hub.GetOrCreateRoom(roomUUID)
 	if err != nil {
-		if !errors.Is(err, hub.ErrRoomNotFound) {
-			_ = conn.Close(websocket.StatusInternalError, "failed to join room")
-			return
-		}
-
-		room, err = h.hub.CreateRoom(roomUUID)
-		if err != nil {
-			_ = conn.Close(websocket.StatusInternalError, "failed to join room")
-			return
-		}
+		_ = conn.Close(websocket.StatusInternalError, "failed to join room")
+		return
 	}
 
 	user := middleware.UserFromContext(r.Context())
@@ -90,7 +82,7 @@ func (h *WSHandler) Handle(w http.ResponseWriter, r *http.Request) {
 
 	h.sendHistory(client, roomInfo.ID)
 
-	client.Run(room, h.svc)
+	client.Run(room, h.svc) // blocking
 }
 
 func (h *WSHandler) sendHistory(client *hub.Client, roomID uuid.UUID) {
@@ -102,14 +94,14 @@ func (h *WSHandler) sendHistory(client *hub.Client, roomID uuid.UUID) {
 
 	// Send messages in chronological order (oldest first)
 	for i := len(messages) - 1; i >= 0; i-- {
-		wire := &hub.WireMessage{
+		msg := &hub.Message{
 			Type:      hub.MessageTypeChat,
 			ID:        messages[i].ID.String(),
 			Author:    messages[i].Author,
 			Content:   messages[i].Content,
 			Timestamp: messages[i].CreatedAt,
 		}
-		wireBytes, err := wire.Marshal()
+		wireBytes, err := msg.Marshal()
 		if err != nil {
 			slog.Error("failed to marshal history message", "error", err, "room_id", roomID)
 			continue

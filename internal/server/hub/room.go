@@ -1,6 +1,7 @@
 package hub
 
 import (
+	"context"
 	"log/slog"
 	"sync"
 
@@ -14,14 +15,16 @@ type Room struct {
 	broadcastPool *BroadcastPool
 	poolThreshold int
 	workerCount   int
+	publish       func(ctx context.Context, msg []byte) error
 }
 
-func NewRoom() *Room {
+func NewRoom(publish func(ctx context.Context, msg []byte) error) *Room {
 	return &Room{
 		ID:            uuid.New(),
 		clients:       make(map[*Client]bool),
 		poolThreshold: 10,
 		workerCount:   10,
+		publish:       publish,
 	}
 }
 
@@ -56,33 +59,29 @@ func (r *Room) Remove(c *Client) {
 	r.mu.Unlock()
 }
 
-func (r *Room) Broadcast(msg []byte, sender *Client) {
+func (r *Room) Broadcast(msg []byte, _ *Client) {
+	if err := r.publish(context.Background(), msg); err != nil {
+		slog.Error("broker publish failed", "room_id", r.ID, "error", err)
+	}
+}
+
+func (r *Room) fanOut(msg []byte) {
 	r.mu.RLock()
 	poolEnabled := r.broadcastPool != nil
 
+	clientSnapshot := make([]*Client, 0, len(r.clients))
+	for client := range r.clients {
+		clientSnapshot = append(clientSnapshot, client)
+	}
+	r.mu.RUnlock()
+
 	if !poolEnabled {
-		clientSnapshot := make([]*Client, 0, len(r.clients))
-		for client := range r.clients {
-			if client != sender {
-				clientSnapshot = append(clientSnapshot, client)
-			}
-		}
-		r.mu.RUnlock()
 		for _, client := range clientSnapshot {
 			client.SendRaw(msg)
 		}
 		return
 	}
 
-	clientSnapshot := make([]*Client, 0, len(r.clients))
-	for client := range r.clients {
-		if client != sender {
-			clientSnapshot = append(clientSnapshot, client)
-		}
-	}
-	r.mu.RUnlock()
-
-	// Submit to worker pool (non-blocking)
 	job := &broadcastJob{
 		message: msg,
 		clients: clientSnapshot,
@@ -90,7 +89,6 @@ func (r *Room) Broadcast(msg []byte, sender *Client) {
 	r.broadcastPool.Submit(job)
 }
 
-// Shutdown gracefully shuts down the room and its worker pool
 func (r *Room) Shutdown() {
 	if r.broadcastPool != nil {
 		r.broadcastPool.Shutdown()
