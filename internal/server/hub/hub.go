@@ -9,7 +9,10 @@ import (
 	"github.com/google/uuid"
 )
 
-var ErrRoomNotFound = errors.New("room not found")
+var (
+	ErrRoomNotFound = errors.New("room not found")
+	ErrRoomExists   = errors.New("room already active")
+)
 
 type Hub struct {
 	active map[uuid.UUID]*Room
@@ -36,8 +39,8 @@ func (h *Hub) CreateRoom(roomUUID uuid.UUID) (*Room, error) {
 	h.mu.Lock()
 	defer h.mu.Unlock()
 
-	if room, ok := h.active[roomUUID]; ok {
-		return room, nil
+	if _, ok := h.active[roomUUID]; ok {
+		return nil, ErrRoomExists
 	}
 
 	publish := func(ctx context.Context, msg []byte) error {

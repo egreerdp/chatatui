@@ -66,17 +66,15 @@ func (h *WSHandler) Handle(w http.ResponseWriter, r *http.Request) {
 	defer func() { _ = conn.CloseNow() }()
 
 	room, err := h.hub.GetRoom(roomUUID)
-	if err != nil {
-		if !errors.Is(err, hub.ErrRoomNotFound) {
-			_ = conn.Close(websocket.StatusInternalError, "failed to join room")
-			return
-		}
-
+	if errors.Is(err, hub.ErrRoomNotFound) {
 		room, err = h.hub.CreateRoom(roomUUID)
-		if err != nil {
-			_ = conn.Close(websocket.StatusInternalError, "failed to join room")
-			return
+		if errors.Is(err, hub.ErrRoomExists) {
+			room, err = h.hub.GetRoom(roomUUID)
 		}
+	}
+	if err != nil {
+		_ = conn.Close(websocket.StatusInternalError, "failed to join room")
+		return
 	}
 
 	user := middleware.UserFromContext(r.Context())
