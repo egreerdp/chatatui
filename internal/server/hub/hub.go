@@ -12,7 +12,7 @@ import (
 var ErrRoomNotFound = errors.New("room not found")
 
 type Hub struct {
-	Rooms  map[uuid.UUID]*Room
+	active map[uuid.UUID]*Room
 	mu     sync.RWMutex
 	broker Broker
 	subs   map[uuid.UUID]func()
@@ -20,17 +20,23 @@ type Hub struct {
 
 func NewHub(broker Broker) *Hub {
 	return &Hub{
-		Rooms:  make(map[uuid.UUID]*Room),
+		active: make(map[uuid.UUID]*Room),
 		broker: broker,
 		subs:   make(map[uuid.UUID]func()),
 	}
+}
+
+func (h *Hub) ActiveCount() int {
+	h.mu.RLock()
+	defer h.mu.RUnlock()
+	return len(h.active)
 }
 
 func (h *Hub) CreateRoom(roomUUID uuid.UUID) (*Room, error) {
 	h.mu.Lock()
 	defer h.mu.Unlock()
 
-	if room, ok := h.Rooms[roomUUID]; ok {
+	if room, ok := h.active[roomUUID]; ok {
 		return room, nil
 	}
 
@@ -40,7 +46,7 @@ func (h *Hub) CreateRoom(roomUUID uuid.UUID) (*Room, error) {
 
 	room := NewRoom(publish)
 	room.ID = roomUUID
-	h.Rooms[roomUUID] = room
+	h.active[roomUUID] = room
 
 	ch, unsub, err := h.broker.Subscribe(context.Background(), roomUUID)
 	if err != nil {
@@ -62,7 +68,7 @@ func (h *Hub) GetRoom(roomUUID uuid.UUID) (*Room, error) {
 	h.mu.RLock()
 	defer h.mu.RUnlock()
 
-	room, ok := h.Rooms[roomUUID]
+	room, ok := h.active[roomUUID]
 	if !ok {
 		return nil, ErrRoomNotFound
 	}
@@ -72,18 +78,18 @@ func (h *Hub) GetRoom(roomUUID uuid.UUID) (*Room, error) {
 
 func (h *Hub) Add(room *Room) {
 	h.mu.Lock()
-	h.Rooms[room.ID] = room
+	h.active[room.ID] = room
 	h.mu.Unlock()
 }
 
 func (h *Hub) Remove(roomID uuid.UUID) {
 	h.mu.Lock()
-	room := h.Rooms[roomID]
+	room := h.active[roomID]
 	if unsub, ok := h.subs[roomID]; ok {
 		unsub()
 		delete(h.subs, roomID)
 	}
-	delete(h.Rooms, roomID)
+	delete(h.active, roomID)
 	h.mu.Unlock()
 
 	if room != nil {
@@ -99,7 +105,7 @@ func (h *Hub) Broadcast(msg []byte, sender *Client) {
 	h.mu.RLock()
 	defer h.mu.RUnlock()
 
-	for _, room := range h.Rooms {
+	for _, room := range h.active {
 		room.Broadcast(msg, sender)
 	}
 }
@@ -113,7 +119,7 @@ func (h *Hub) Shutdown() {
 		delete(h.subs, id)
 	}
 
-	for _, room := range h.Rooms {
+	for _, room := range h.active {
 		room.Shutdown()
 	}
 }

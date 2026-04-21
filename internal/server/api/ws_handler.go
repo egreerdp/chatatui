@@ -24,7 +24,7 @@ func NewWSHandler(h *hub.Hub, svc ChatService, messageHistoryLimit int) *WSHandl
 	go func() {
 		for {
 			time.Sleep(time.Second * 5)
-			slog.Debug("hub status", "room_count", len(h.Rooms))
+			slog.Debug("hub status", "room_count", h.ActiveCount())
 		}
 	}()
 
