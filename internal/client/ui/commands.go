@@ -149,7 +149,7 @@ func sendMessageCmd(conn *websocket.Conn, text string) tea.Cmd {
 
 func sendTypingCmd(conn *websocket.Conn) tea.Cmd {
 	return func() tea.Msg {
-		msg := &hub.WireMessage{Type: hub.MessageTypeTyping}
+		msg := &hub.Message{Type: hub.MessageTypeTyping}
 		data, err := msg.Marshal()
 		if err != nil {
 			return errMsg(err)

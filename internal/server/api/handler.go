@@ -42,8 +42,8 @@ func NewHandler(h RoomHub, users middleware.UserLookup, userStore UserStore, roo
 	r.Use(chimw.Heartbeat("/up"))
 
 	return &Handler{
-		Router:      r,
-		ChatService: svc,
+		Router:          r,
+		ChatService:     svc,
 		Config:          cfg,
 		RateLimiter:     rl,
 		userLookup:      users,
@@ -57,7 +57,7 @@ func (h *Handler) Routes() chi.Router {
 	h.Router.Post("/register", h.registerHandler.Handle)
 
 	h.Router.Group(func(r chi.Router) {
-		r.Use(
+		r.Use( // TODO: standardise how these are passed
 			middleware.APIKeyAuth(h.userLookup),
 			h.RateLimiter.Middleware,
 		)

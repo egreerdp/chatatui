@@ -18,7 +18,7 @@ func (m MessageType) String() string {
 	return string(m)
 }
 
-type WireMessage struct {
+type Message struct {
 	Type      MessageType `json:"type"`
 	ID        string      `json:"id"`
 	Author    string      `json:"author"`
@@ -26,6 +26,6 @@ type WireMessage struct {
 	Timestamp time.Time   `json:"timestamp"`
 }
 
-func (m *WireMessage) Marshal() ([]byte, error) {
+func (m *Message) Marshal() ([]byte, error) {
 	return json.Marshal(m)
 }

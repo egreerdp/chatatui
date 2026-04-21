@@ -114,15 +114,6 @@ func (h *Hub) Publish(ctx context.Context, roomID uuid.UUID, msg []byte) error {
 	return h.broker.Publish(ctx, roomID, msg)
 }
 
-func (h *Hub) Broadcast(msg []byte, sender *Client) {
-	h.mu.RLock()
-	defer h.mu.RUnlock()
-
-	for _, room := range h.active {
-		room.Broadcast(msg, sender)
-	}
-}
-
 func (h *Hub) Shutdown() {
 	h.mu.Lock()
 	defer h.mu.Unlock()

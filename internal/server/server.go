@@ -4,7 +4,6 @@ import (
 	"context"
 	"net/http"
 
-	"github.com/EwanGreer/chatatui/internal/repository"
 	"github.com/EwanGreer/chatatui/internal/server/api"
 )
 
@@ -12,15 +11,13 @@ type ChatServer struct {
 	handler    *api.Handler
 	srv        *http.Server
 	addr       string
-	db         *repository.PostgresDB
 	onShutdown func()
 }
 
-func NewChatServer(h *api.Handler, addr string, db *repository.PostgresDB, onShutdown func()) *ChatServer {
+func NewChatServer(h *api.Handler, addr string, onShutdown func()) *ChatServer {
 	return &ChatServer{
 		handler:    h,
 		addr:       addr,
-		db:         db,
 		onShutdown: onShutdown,
 	}
 }

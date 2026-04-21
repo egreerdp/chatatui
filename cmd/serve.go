@@ -57,10 +57,10 @@ var serveCmd = &cobra.Command{
 		}
 		broker := hub.NewRedisBroker(redis.NewClient(opt))
 
-		h := hub.NewHub(broker)
+		hb := hub.NewHub(broker)
 		svc := service.NewChatService(database.Rooms(), database.Messages())
-		handler := api.NewHandler(h, database.Users(), database.Users(), database.Rooms(), svc, cfg, rateLimiter)
-		srv := server.NewChatServer(handler, cfg.Addr, database, h.Shutdown)
+		handler := api.NewHandler(hb, database.Users(), database.Users(), database.Rooms(), svc, cfg, rateLimiter)
+		srv := server.NewChatServer(handler, cfg.Addr, hb.Shutdown)
 
 		go func() {
 			slog.Info("server started", "addr", cfg.Addr)

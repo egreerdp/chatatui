@@ -82,7 +82,7 @@ func (h *WSHandler) Handle(w http.ResponseWriter, r *http.Request) {
 
 	h.sendHistory(client, roomInfo.ID)
 
-	client.Run(room, h.svc)
+	client.Run(room, h.svc) // blocking
 }
 
 func (h *WSHandler) sendHistory(client *hub.Client, roomID uuid.UUID) {
@@ -94,14 +94,14 @@ func (h *WSHandler) sendHistory(client *hub.Client, roomID uuid.UUID) {
 
 	// Send messages in chronological order (oldest first)
 	for i := len(messages) - 1; i >= 0; i-- {
-		wire := &hub.WireMessage{
+		msg := &hub.Message{
 			Type:      hub.MessageTypeChat,
 			ID:        messages[i].ID.String(),
 			Author:    messages[i].Author,
 			Content:   messages[i].Content,
 			Timestamp: messages[i].CreatedAt,
 		}
-		wireBytes, err := wire.Marshal()
+		wireBytes, err := msg.Marshal()
 		if err != nil {
 			slog.Error("failed to marshal history message", "error", err, "room_id", roomID)
 			continue
