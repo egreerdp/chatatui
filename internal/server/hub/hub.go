@@ -68,35 +68,13 @@ func (h *Hub) CreateRoom(roomUUID uuid.UUID) (*Room, error) {
 }
 
 func (h *Hub) EnsureActive(roomUUID uuid.UUID) (*Room, error) {
-	h.mu.Lock()
-	defer h.mu.Unlock()
-
-	if room, ok := h.active[roomUUID]; ok {
+	if room, err := h.GetRoom(roomUUID); err == nil {
 		return room, nil
 	}
-
-	publish := func(ctx context.Context, msg []byte) error {
-		return h.broker.Publish(ctx, roomUUID, msg)
+	if room, err := h.CreateRoom(roomUUID); !errors.Is(err, ErrRoomExists) {
+		return room, err
 	}
-
-	room := NewRoom(publish)
-	room.ID = roomUUID
-	h.active[roomUUID] = room
-
-	ch, unsub, err := h.broker.Subscribe(context.Background(), roomUUID)
-	if err != nil {
-		slog.Error("broker subscribe failed", "room_id", roomUUID, "error", err)
-		h.subs[roomUUID] = func() {}
-	} else {
-		h.subs[roomUUID] = unsub
-		go func() {
-			for msg := range ch {
-				room.fanOut(msg)
-			}
-		}()
-	}
-
-	return room, nil
+	return h.GetRoom(roomUUID)
 }
 
 func (h *Hub) GetRoom(roomUUID uuid.UUID) (*Room, error) {
