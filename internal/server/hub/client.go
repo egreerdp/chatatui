@@ -36,15 +36,15 @@ func NewClient(conn *websocket.Conn, userID, roomID uuid.UUID, username string) 
 	}
 }
 
-func (c *Client) Run(room *Room, persister MessagePersister) {
+func (c *Client) Run(session *Session, persister MessagePersister) {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
 	go c.writePump(ctx)
-	c.readPump(ctx, room, persister) // blocking
+	c.readPump(ctx, session, persister) // blocking
 }
 
-func (c *Client) readPump(ctx context.Context, room *Room, persister MessagePersister) {
+func (c *Client) readPump(ctx context.Context, session *Session, persister MessagePersister) {
 	defer func() { _ = c.conn.CloseNow() }()
 
 	for {
@@ -54,30 +54,30 @@ func (c *Client) readPump(ctx context.Context, room *Room, persister MessagePers
 		}
 
 		if len(data) > limits.MaxMessageLength {
-			errWire := &WireMessage{
+			errMsg := &Message{
 				Type:      MessageTypeError,
 				Content:   fmt.Sprintf("message too long (max %d characters)", limits.MaxMessageLength),
 				Timestamp: time.Now(),
 			}
-			if errBytes, err := errWire.Marshal(); err == nil {
+			if errBytes, err := errMsg.Marshal(); err == nil {
 				c.Send(errBytes)
 			}
 			continue
 		}
 
-		var peek WireMessage
+		var peek Message
 		if json.Unmarshal(data, &peek) == nil && peek.Type == MessageTypeTyping {
-			typingWire := &WireMessage{
+			typingMsg := &Message{
 				Type:      MessageTypeTyping,
 				Author:    c.Username,
 				Timestamp: time.Now(),
 			}
-			typingBytes, err := typingWire.Marshal()
+			typingBytes, err := typingMsg.Marshal()
 			if err != nil {
 				slog.Error("failed to marshal typing event", "error", err, "user_id", c.UserID)
 				continue
 			}
-			room.Broadcast(typingBytes, c)
+			session.Broadcast(typingBytes, c)
 			continue
 		}
 
@@ -86,7 +86,7 @@ func (c *Client) readPump(ctx context.Context, room *Room, persister MessagePers
 			slog.Error("failed to persist message", "error", err, "room_id", c.RoomID, "user_id", c.UserID)
 		}
 
-		wire := &WireMessage{
+		wire := &Message{
 			Type:    MessageTypeChat,
 			ID:      msgID.String(),
 			Author:  c.Username,
@@ -104,7 +104,7 @@ func (c *Client) readPump(ctx context.Context, room *Room, persister MessagePers
 			continue
 		}
 
-		room.Broadcast(wireBytes, c)
+		session.Broadcast(wireBytes, c)
 	}
 }
 

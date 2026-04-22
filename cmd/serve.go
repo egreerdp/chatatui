@@ -17,6 +17,7 @@ import (
 	"github.com/EwanGreer/chatatui/internal/server/api"
 	"github.com/EwanGreer/chatatui/internal/server/hub"
 	"github.com/EwanGreer/chatatui/internal/service"
+	"github.com/redis/go-redis/v9"
 	"github.com/spf13/cobra"
 )
 
@@ -45,9 +46,21 @@ var serveCmd = &cobra.Command{
 			os.Exit(1)
 		}
 
+		if cfg.RedisURL == "" {
+			slog.Error("redis_url is required")
+			os.Exit(1)
+		}
+		opt, err := redis.ParseURL(cfg.RedisURL)
+		if err != nil {
+			slog.Error("invalid redis_url", "error", err)
+			os.Exit(1)
+		}
+		broker := hub.NewRedisBroker(redis.NewClient(opt))
+
+		hb := hub.NewHub(broker)
 		svc := service.NewChatService(database.Rooms(), database.Messages())
-		handler := api.NewHandler(hub.NewHub(), database.Users(), database.Users(), database.Rooms(), svc, cfg, rateLimiter)
-		srv := server.NewChatServer(handler, cfg.Addr, database)
+		handler := api.NewHandler(hb, database.Users(), database.Users(), database.Rooms(), svc, cfg, rateLimiter)
+		srv := server.NewChatServer(handler, cfg.Addr, hb.Shutdown)
 
 		go func() {
 			slog.Info("server started", "addr", cfg.Addr)

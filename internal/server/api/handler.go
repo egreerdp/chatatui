@@ -19,9 +19,13 @@ type ChatService interface {
 	PersistMessage(content []byte, senderID, roomID uuid.UUID) (uuid.UUID, time.Time, error)
 }
 
+type RoomHub interface {
+	GetOrCreateSession(uuid.UUID) (*hub.Session, error)
+	ActiveCount() int
+}
+
 type Handler struct {
 	Router          chi.Router
-	Hub             *hub.Hub
 	ChatService     ChatService
 	Config          config.ServerConfig
 	RateLimiter     *middleware.RateLimiter
@@ -31,15 +35,15 @@ type Handler struct {
 	roomsHandler    *RoomsHandler
 }
 
-func NewHandler(h *hub.Hub, users middleware.UserLookup, userStore UserStore, roomStore RoomStore, svc ChatService, cfg config.ServerConfig, rl *middleware.RateLimiter) *Handler {
+func NewHandler(h RoomHub, users middleware.UserLookup, userStore UserStore, roomStore RoomStore, svc ChatService, cfg config.ServerConfig, rl *middleware.RateLimiter) *Handler {
 	r := chi.NewRouter()
+	r.Use(chimw.RequestID)
 	r.Use(chimw.Logger)
 	r.Use(chimw.Recoverer)
 	r.Use(chimw.Heartbeat("/up"))
 
 	return &Handler{
 		Router:          r,
-		Hub:             h,
 		ChatService:     svc,
 		Config:          cfg,
 		RateLimiter:     rl,
@@ -54,13 +58,14 @@ func (h *Handler) Routes() chi.Router {
 	h.Router.Post("/register", h.registerHandler.Handle)
 
 	h.Router.Group(func(r chi.Router) {
-		r.Use(
+		r.Use( // TODO: standardise how these are passed
 			middleware.APIKeyAuth(h.userLookup),
 			h.RateLimiter.Middleware,
 		)
 
-		r.Get("/rooms", h.roomsHandler.List)
+		r.Get("/rooms", h.roomsHandler.Index)
 		r.Post("/rooms", h.roomsHandler.Create)
+		r.Get("/rooms/{id}", h.roomsHandler.Show)
 		r.Get("/ws/{roomID}", h.wsHandler.Handle)
 	})
 

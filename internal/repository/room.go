@@ -1,9 +1,18 @@
 package repository
 
 import (
+	"time"
+
 	"github.com/google/uuid"
 	"gorm.io/gorm"
 )
+
+type RoomMember struct {
+	RoomID          uuid.UUID `gorm:"primaryKey"`
+	UserID          uuid.UUID `gorm:"primaryKey"`
+	LastConnectedAt time.Time
+	User            User
+}
 
 type Room struct {
 	BaseModel
@@ -47,8 +56,17 @@ func (r *RoomRepository) Delete(id uuid.UUID) error {
 	return r.db.Delete(&Room{}, "id = ?", id).Error
 }
 
+func (r *RoomRepository) ListRoomMembers(roomID uuid.UUID) ([]RoomMember, error) {
+	var members []RoomMember
+	err := r.db.Preload("User").Where("room_id = ?", roomID).Find(&members).Error
+	return members, err
+}
+
 func (r *RoomRepository) AddMember(roomID, userID uuid.UUID) error {
-	return r.db.Exec("INSERT INTO room_members (room_id, user_id) VALUES (?, ?) ON CONFLICT DO NOTHING", roomID, userID).Error
+	return r.db.Exec(
+		"INSERT INTO room_members (room_id, user_id, last_connected_at) VALUES (?, ?, NOW()) ON CONFLICT (room_id, user_id) DO UPDATE SET last_connected_at = NOW()",
+		roomID, userID,
+	).Error
 }
 
 func (r *RoomRepository) RemoveMember(roomID, userID uuid.UUID) error {
