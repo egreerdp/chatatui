@@ -52,7 +52,7 @@ func (r *MessageRepository) GetByRoom(roomID uuid.UUID, limit, offset int) ([]do
 	var rows []Message
 	err := r.db.Preload("Sender").
 		Where("room_id = ?", roomID).
-		Order("created_at DESC").
+		Order("created_at ASC").
 		Limit(limit).
 		Offset(offset).
 		Find(&rows).Error

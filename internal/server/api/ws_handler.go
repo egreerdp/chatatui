@@ -92,14 +92,13 @@ func (h *WSHandler) sendHistory(client *hub.Client, roomID uuid.UUID) {
 		return
 	}
 
-	// Send messages in chronological order (oldest first)
-	for i := len(messages) - 1; i >= 0; i-- {
+	for _, m := range messages {
 		msg := &hub.Message{
 			Type:      hub.MessageTypeChat,
-			ID:        messages[i].ID.String(),
-			Author:    messages[i].Author,
-			Content:   messages[i].Content,
-			Timestamp: messages[i].CreatedAt,
+			ID:        m.ID.String(),
+			Author:    m.Author,
+			Content:   m.Content,
+			Timestamp: m.CreatedAt,
 		}
 		wireBytes, err := msg.Marshal()
 		if err != nil {
