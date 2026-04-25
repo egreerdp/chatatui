@@ -1,8 +1,6 @@
 package api
 
 import (
-	"time"
-
 	"github.com/EwanGreer/chatatui/internal/config"
 	"github.com/EwanGreer/chatatui/internal/domain"
 	"github.com/EwanGreer/chatatui/internal/middleware"
@@ -14,9 +12,8 @@ import (
 
 type ChatService interface {
 	GetRoom(id uuid.UUID) (*domain.Room, error)
-	AddRoomMember(roomID, userID uuid.UUID) error
-	GetMessageHistory(roomID uuid.UUID, limit, offset int) ([]domain.Message, error)
-	PersistMessage(content []byte, senderID, roomID uuid.UUID) (uuid.UUID, time.Time, error)
+	JoinRoom(roomID, userID uuid.UUID) ([]domain.WireMessage, error)
+	PublishMessage(content []byte, senderID uuid.UUID, senderName string, roomID uuid.UUID) (*domain.WireMessage, error)
 }
 
 type RoomHub interface {
@@ -48,7 +45,7 @@ func NewHandler(h RoomHub, users middleware.UserLookup, userStore UserStore, roo
 		Config:          cfg,
 		RateLimiter:     rl,
 		userLookup:      users,
-		wsHandler:       NewWSHandler(h, svc, cfg.MessageHistoryLimit),
+		wsHandler:       NewWSHandler(h, svc),
 		registerHandler: NewRegisterHandler(userStore),
 		roomsHandler:    NewRoomsHandler(roomStore, cfg.RoomListLimit),
 	}

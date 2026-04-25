@@ -6,21 +6,19 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/EwanGreer/chatatui/internal/domain"
 	"github.com/EwanGreer/chatatui/internal/middleware"
-	"github.com/EwanGreer/chatatui/internal/server/hub"
 	"github.com/coder/websocket"
 	"github.com/go-chi/chi/v5"
 	"github.com/google/uuid"
-	"gorm.io/gorm"
 )
 
 type WSHandler struct {
-	hub                 RoomHub
-	svc                 ChatService
-	messageHistoryLimit int
+	hub RoomHub
+	svc ChatService
 }
 
-func NewWSHandler(h RoomHub, svc ChatService, messageHistoryLimit int) *WSHandler {
+func NewWSHandler(h RoomHub, svc ChatService) *WSHandler {
 	go func() {
 		for {
 			time.Sleep(time.Second * 5)
@@ -28,11 +26,7 @@ func NewWSHandler(h RoomHub, svc ChatService, messageHistoryLimit int) *WSHandle
 		}
 	}()
 
-	return &WSHandler{
-		hub:                 h,
-		svc:                 svc,
-		messageHistoryLimit: messageHistoryLimit,
-	}
+	return &WSHandler{hub: h, svc: svc}
 }
 
 func (h *WSHandler) Handle(w http.ResponseWriter, r *http.Request) {
@@ -50,7 +44,7 @@ func (h *WSHandler) Handle(w http.ResponseWriter, r *http.Request) {
 
 	roomInfo, err := h.svc.GetRoom(roomUUID)
 	if err != nil {
-		if errors.Is(err, gorm.ErrRecordNotFound) {
+		if errors.Is(err, domain.ErrNotFound) {
 			writeError(w, http.StatusNotFound, "ROOM_NOT_FOUND", "room not found")
 			return
 		}
@@ -72,39 +66,5 @@ func (h *WSHandler) Handle(w http.ResponseWriter, r *http.Request) {
 	}
 
 	user := middleware.UserFromContext(r.Context())
-	if err := h.svc.AddRoomMember(roomInfo.ID, user.ID); err != nil {
-		slog.Error("failed to add room member", "error", err, "room_id", roomInfo.ID, "user_id", user.ID)
-	}
-
-	client := hub.NewClient(conn, user.ID, roomUUID, user.Name)
-	session.AddClient(client)
-	defer session.RemoveClient(client)
-
-	h.sendHistory(client, roomInfo.ID)
-
-	client.Run(session, h.svc) // blocking
-}
-
-func (h *WSHandler) sendHistory(client *hub.Client, roomID uuid.UUID) {
-	messages, err := h.svc.GetMessageHistory(roomID, h.messageHistoryLimit, 0)
-	if err != nil {
-		slog.Error("failed to get message history", "error", err, "room_id", roomID)
-		return
-	}
-
-	for _, m := range messages {
-		msg := &hub.Message{
-			Type:      hub.MessageTypeChat,
-			ID:        m.ID.String(),
-			Author:    m.Author,
-			Content:   m.Content,
-			Timestamp: m.CreatedAt,
-		}
-		wireBytes, err := msg.Marshal()
-		if err != nil {
-			slog.Error("failed to marshal history message", "error", err, "room_id", roomID)
-			continue
-		}
-		client.SendRaw(wireBytes)
-	}
+	newRoomConn(conn, session, roomInfo.ID, user, h.svc).serve()
 }

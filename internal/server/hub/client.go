@@ -12,12 +12,6 @@ import (
 	"github.com/google/uuid"
 )
 
-// MessagePersister abstracts message persistence so the hub package
-// does not depend on the repository layer.
-type MessagePersister interface {
-	PersistMessage(content []byte, senderID, roomID uuid.UUID) (id uuid.UUID, createdAt time.Time, err error)
-}
-
 type Client struct {
 	conn     *websocket.Conn
 	send     chan []byte
@@ -36,12 +30,19 @@ func NewClient(conn *websocket.Conn, userID, roomID uuid.UUID, username string) 
 	}
 }
 
-func (c *Client) Run(session *Session, persister MessagePersister) {
+// Run starts the client's read and write pumps and returns a channel of raw
+// incoming chat messages. The channel is closed when the connection ends.
+// Typing events and protocol errors are handled internally and never emitted.
+func (c *Client) Run(session *Session) <-chan []byte {
+	incoming := make(chan []byte)
 	ctx, cancel := context.WithCancel(context.Background())
-	defer cancel()
-
 	go c.writePump(ctx)
-	c.readPump(ctx, session, persister) // blocking
+	go func() {
+		defer cancel()
+		defer close(incoming)
+		c.readPump(ctx, session, incoming)
+	}()
+	return incoming
 }
 
 func (c *Client) Send(msg []byte) {
@@ -61,7 +62,18 @@ func (c *Client) SendRaw(msg []byte) {
 	}
 }
 
-func (c *Client) readPump(ctx context.Context, session *Session, persister MessagePersister) {
+func (c *Client) SendError(msg string) {
+	errMsg := &Message{
+		Type:      MessageTypeError,
+		Content:   msg,
+		Timestamp: time.Now(),
+	}
+	if b, err := errMsg.Marshal(); err == nil {
+		c.Send(b)
+	}
+}
+
+func (c *Client) readPump(ctx context.Context, session *Session, incoming chan<- []byte) {
 	defer func() { _ = c.conn.CloseNow() }()
 
 	for {
@@ -98,39 +110,11 @@ func (c *Client) readPump(ctx context.Context, session *Session, persister Messa
 			continue
 		}
 
-		msgID, createdAt, err := persister.PersistMessage(data, c.UserID, c.RoomID)
-		if err != nil {
-			slog.Error("failed to persist message", "error", err, "room_id", c.RoomID, "user_id", c.UserID)
-			errMsg := &Message{
-				Type:      MessageTypeError,
-				Content:   "could not send message",
-				Timestamp: time.Now(),
-			}
-			if errBytes, err := errMsg.Marshal(); err == nil {
-				c.Send(errBytes)
-			}
-			continue
+		select {
+		case incoming <- data:
+		case <-ctx.Done():
+			return
 		}
-
-		wire := &Message{
-			Type:    MessageTypeChat,
-			ID:      msgID.String(),
-			Author:  c.Username,
-			Content: string(data),
-		}
-		if createdAt.IsZero() {
-			wire.Timestamp = time.Now()
-		} else {
-			wire.Timestamp = createdAt
-		}
-
-		wireBytes, err := wire.Marshal()
-		if err != nil {
-			slog.Error("failed to marshal message", "error", err, "room_id", c.RoomID, "user_id", c.UserID)
-			continue
-		}
-
-		session.Broadcast(wireBytes, c)
 	}
 }
 

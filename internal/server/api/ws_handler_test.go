@@ -9,13 +9,13 @@ import (
 	"sync"
 	"testing"
 
+	"github.com/EwanGreer/chatatui/internal/domain"
 	mocks "github.com/EwanGreer/chatatui/internal/server/api/_mocks"
 	"github.com/EwanGreer/chatatui/internal/server/hub"
 	"github.com/go-chi/chi/v5"
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"gorm.io/gorm"
 )
 
 type testBroker struct {
@@ -62,9 +62,8 @@ func (b *testBroker) Subscribe(_ context.Context, roomID uuid.UUID) (<-chan []by
 // shape, without starting the hub status goroutine.
 func newWSHandlerRouter(svc ChatService) http.Handler {
 	h := &WSHandler{
-		hub:                 hub.NewHub(newTestBroker()),
-		svc:                 svc,
-		messageHistoryLimit: 50,
+		hub: hub.NewHub(newTestBroker()),
+		svc: svc,
 	}
 	r := chi.NewRouter()
 	r.Get("/ws/{roomID}", h.Handle)
@@ -82,7 +81,7 @@ func TestWSHandler_MissingRoomID(t *testing.T) {
 	svc := mocks.NewMockChatService(t)
 
 	// Register a route without the {roomID} segment so chi sets it to "".
-	h := &WSHandler{hub: hub.NewHub(newTestBroker()), svc: svc, messageHistoryLimit: 50}
+	h := &WSHandler{hub: hub.NewHub(newTestBroker()), svc: svc}
 	r := chi.NewRouter()
 	r.Get("/ws/", h.Handle)
 
@@ -111,7 +110,7 @@ func TestWSHandler_InvalidRoomUUID(t *testing.T) {
 func TestWSHandler_RoomNotFound(t *testing.T) {
 	roomID := uuid.New()
 	svc := mocks.NewMockChatService(t)
-	svc.EXPECT().GetRoom(roomID).Return(nil, gorm.ErrRecordNotFound)
+	svc.EXPECT().GetRoom(roomID).Return(nil, domain.ErrNotFound)
 
 	router := newWSHandlerRouter(svc)
 

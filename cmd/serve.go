@@ -58,7 +58,7 @@ var serveCmd = &cobra.Command{
 		broker := hub.NewRedisBroker(redis.NewClient(opt))
 
 		hb := hub.NewHub(broker)
-		svc := service.NewChatService(database.Rooms(), database.Messages())
+		svc := service.NewChatService(database.Rooms(), database.Messages(), cfg.MessageHistoryLimit)
 		handler := api.NewHandler(hb, database.Users(), database.Users(), database.Rooms(), svc, cfg, rateLimiter)
 		srv := server.NewChatServer(handler, cfg.Addr, hb.Shutdown)
 
