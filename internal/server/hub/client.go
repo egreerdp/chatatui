@@ -44,6 +44,23 @@ func (c *Client) Run(session *Session, persister MessagePersister) {
 	c.readPump(ctx, session, persister) // blocking
 }
 
+func (c *Client) Send(msg []byte) {
+	select {
+	case c.send <- msg:
+		slog.Debug("message sent to client", "user_id", c.UserID, "room_id", c.RoomID)
+	default:
+		slog.Warn("client send buffer full, dropping message", "user_id", c.UserID, "room_id", c.RoomID)
+	}
+}
+
+func (c *Client) SendRaw(msg []byte) {
+	select {
+	case c.send <- msg:
+	default:
+		slog.Warn("client send buffer full, dropping message", "user_id", c.UserID, "room_id", c.RoomID)
+	}
+}
+
 func (c *Client) readPump(ctx context.Context, session *Session, persister MessagePersister) {
 	defer func() { _ = c.conn.CloseNow() }()
 
@@ -122,21 +139,5 @@ func (c *Client) writePump(ctx context.Context) {
 		case <-ctx.Done():
 			return
 		}
-	}
-}
-
-func (c *Client) Send(msg []byte) {
-	select {
-	case c.send <- msg:
-		slog.Debug("message sent to client", "user_id", c.UserID, "room_id", c.RoomID)
-	default:
-	}
-}
-
-func (c *Client) SendRaw(msg []byte) {
-	select {
-	case c.send <- msg:
-	default:
-		slog.Warn("client send buffer full, dropping message", "user_id", c.UserID, "room_id", c.RoomID)
 	}
 }
