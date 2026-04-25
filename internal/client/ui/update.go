@@ -70,7 +70,6 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		m.connectedTo = msg.roomID
 		m.state = connStateConnected
 		m.reconnectDelay = time.Second
-		m.err = nil
 		m.messages = []string{}
 		m.updateViewportContent()
 		return m, m.listenForMessages()
@@ -91,18 +90,21 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	case reconnectMsg:
 		return m, m.connectToRoom(string(msg))
 
+	case clearFlashMsg:
+		m.flash = ""
+		return m, nil
+
 	case errMsg:
 		if m.connectedTo != "" {
 			delay := m.reconnectDelay
 			m.reconnectDelay = min(delay*2, 30*time.Second)
 			m.state = connStateConnecting
-			m.err = nil
 			return m, tea.Tick(delay, func(t time.Time) tea.Msg {
 				return reconnectMsg(m.connectedTo)
 			})
 		}
-		m.err = msg
-		return m, nil
+		m.flash = msg.Error()
+		return m, clearFlashCmd()
 
 	case tea.KeyMsg:
 		switch msg.String() {

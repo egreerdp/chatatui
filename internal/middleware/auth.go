@@ -6,7 +6,7 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/EwanGreer/chatatui/internal/repository"
+	"github.com/EwanGreer/chatatui/internal/domain"
 )
 
 type contextKey string
@@ -14,7 +14,7 @@ type contextKey string
 const userContextKey contextKey = "user"
 
 type UserLookup interface {
-	GetByAPIKey(apiKey string) (*repository.User, error)
+	GetByAPIKey(apiKey string) (*domain.User, error)
 }
 
 func APIKeyAuth(users UserLookup) func(http.Handler) http.Handler {
@@ -40,8 +40,8 @@ func APIKeyAuth(users UserLookup) func(http.Handler) http.Handler {
 	}
 }
 
-func UserFromContext(ctx context.Context) *repository.User {
-	user, _ := ctx.Value(userContextKey).(*repository.User)
+func UserFromContext(ctx context.Context) *domain.User {
+	user, _ := ctx.Value(userContextKey).(*domain.User)
 	return user
 }
 

@@ -1,4 +1,4 @@
-FROM golang:1.25 AS base
+FROM golang:1.26 AS base
 
 WORKDIR /app
 
@@ -27,6 +27,6 @@ FROM base AS development
 WORKDIR /app
 
 RUN go install github.com/air-verse/air@v1.63.0 && \
-  go install github.com/go-delve/delve/cmd/dlv@v1.25.2
+  go install github.com/go-delve/delve/cmd/dlv@v1.26.0
 
 ENTRYPOINT [ "./docker-entrypoint.sh" ]

@@ -5,7 +5,7 @@
 package mocks
 
 import (
-	"github.com/EwanGreer/chatatui/internal/repository"
+	"github.com/EwanGreer/chatatui/internal/domain"
 	mock "github.com/stretchr/testify/mock"
 )
 
@@ -37,7 +37,7 @@ func (_m *MockUserStore) EXPECT() *MockUserStore_Expecter {
 }
 
 // Create provides a mock function for the type MockUserStore
-func (_mock *MockUserStore) Create(user *repository.User) error {
+func (_mock *MockUserStore) Create(user *domain.User) error {
 	ret := _mock.Called(user)
 
 	if len(ret) == 0 {
@@ -45,7 +45,7 @@ func (_mock *MockUserStore) Create(user *repository.User) error {
 	}
 
 	var r0 error
-	if returnFunc, ok := ret.Get(0).(func(*repository.User) error); ok {
+	if returnFunc, ok := ret.Get(0).(func(*domain.User) error); ok {
 		r0 = returnFunc(user)
 	} else {
 		r0 = ret.Error(0)
@@ -59,16 +59,16 @@ type MockUserStore_Create_Call struct {
 }
 
 // Create is a helper method to define mock.On call
-//   - user *repository.User
+//   - user *domain.User
 func (_e *MockUserStore_Expecter) Create(user interface{}) *MockUserStore_Create_Call {
 	return &MockUserStore_Create_Call{Call: _e.mock.On("Create", user)}
 }
 
-func (_c *MockUserStore_Create_Call) Run(run func(user *repository.User)) *MockUserStore_Create_Call {
+func (_c *MockUserStore_Create_Call) Run(run func(user *domain.User)) *MockUserStore_Create_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		var arg0 *repository.User
+		var arg0 *domain.User
 		if args[0] != nil {
-			arg0 = args[0].(*repository.User)
+			arg0 = args[0].(*domain.User)
 		}
 		run(
 			arg0,
@@ -82,7 +82,7 @@ func (_c *MockUserStore_Create_Call) Return(err error) *MockUserStore_Create_Cal
 	return _c
 }
 
-func (_c *MockUserStore_Create_Call) RunAndReturn(run func(user *repository.User) error) *MockUserStore_Create_Call {
+func (_c *MockUserStore_Create_Call) RunAndReturn(run func(user *domain.User) error) *MockUserStore_Create_Call {
 	_c.Call.Return(run)
 	return _c
 }

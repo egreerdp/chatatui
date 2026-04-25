@@ -4,14 +4,19 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"time"
 
+	"github.com/EwanGreer/chatatui/internal/domain"
 	"github.com/EwanGreer/chatatui/internal/limits"
-	"github.com/EwanGreer/chatatui/internal/repository"
+	"github.com/go-chi/chi/v5"
+	"github.com/google/uuid"
 )
 
 type RoomStore interface {
-	Create(room *repository.Room) error
-	List(limit, offset int) ([]repository.Room, error)
+	Create(room *domain.Room) error
+	List(limit, offset int) ([]domain.Room, error)
+	GetByID(id uuid.UUID) (*domain.Room, error)
+	ListRoomMembers(roomID uuid.UUID) ([]domain.RoomMember, error)
 }
 
 type RoomsHandler struct {
@@ -23,17 +28,27 @@ func NewRoomsHandler(rooms RoomStore, listLimit int) *RoomsHandler {
 	return &RoomsHandler{rooms: rooms, listLimit: listLimit}
 }
 
-type roomResponse struct {
-	ID   string `json:"id"`
-	Name string `json:"name"`
+type RoomMemberResponse struct {
+	ID              string     `json:"id"`
+	Name            string     `json:"name"`
+	LastConnectedAt *time.Time `json:"last_connected_at"`
 }
 
-type createRoomRequest struct {
+type GetRoomResponse struct {
+	ID          string               `json:"id"`
+	Name        string               `json:"name"`
+	CreatedAt   string               `json:"created_at"`
+	UpdatedAt   string               `json:"updated_at"`
+	MemberCount int                  `json:"member_count"`
+	Members     []RoomMemberResponse `json:"members"`
+}
+
+type CreateRoomRequest struct {
 	Name string `json:"name"`
 }
 
 func (h *RoomsHandler) Create(w http.ResponseWriter, r *http.Request) {
-	var req createRoomRequest
+	var req CreateRoomRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		writeError(w, http.StatusBadRequest, "INVALID_BODY", "invalid request body")
 		return
@@ -49,18 +64,20 @@ func (h *RoomsHandler) Create(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	room := &repository.Room{
-		Name: req.Name,
-	}
+	room := &domain.Room{Name: req.Name}
 
 	if err := h.rooms.Create(room); err != nil {
 		writeError(w, http.StatusInternalServerError, "INTERNAL_ERROR", "failed to create room")
 		return
 	}
 
-	resp := roomResponse{
-		ID:   room.ID.String(),
-		Name: room.Name,
+	resp := GetRoomResponse{
+		ID:          room.ID.String(),
+		Name:        room.Name,
+		CreatedAt:   room.CreatedAt.String(),
+		UpdatedAt:   room.UpdatedAt.String(),
+		MemberCount: 0,
+		Members:     []RoomMemberResponse{},
 	}
 
 	w.Header().Set("Content-Type", "application/json")
@@ -68,23 +85,85 @@ func (h *RoomsHandler) Create(w http.ResponseWriter, r *http.Request) {
 	_ = json.NewEncoder(w).Encode(resp)
 }
 
-func (h *RoomsHandler) List(w http.ResponseWriter, r *http.Request) {
+func (h *RoomsHandler) Index(w http.ResponseWriter, r *http.Request) {
 	rooms, err := h.rooms.List(h.listLimit, 0)
 	if err != nil {
 		writeError(w, http.StatusInternalServerError, "INTERNAL_ERROR", "failed to list rooms")
 		return
 	}
 
-	resp := make([]roomResponse, len(rooms))
+	resp := make([]GetRoomResponse, len(rooms))
 	for i, room := range rooms {
 		name := room.Name
 		if name == "" {
 			name = room.ID.String()[:8]
 		}
-		resp[i] = roomResponse{
-			ID:   room.ID.String(),
-			Name: name,
+		members := make([]RoomMemberResponse, len(room.Members))
+		for j, m := range room.Members {
+			members[j] = RoomMemberResponse{
+				ID:   m.UserID.String(),
+				Name: m.Name,
+			}
 		}
+		resp[i] = GetRoomResponse{
+			ID:          room.ID.String(),
+			Name:        name,
+			CreatedAt:   room.CreatedAt.String(),
+			UpdatedAt:   room.UpdatedAt.String(),
+			MemberCount: len(members),
+			Members:     members,
+		}
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	_ = json.NewEncoder(w).Encode(resp)
+}
+
+func (h *RoomsHandler) Show(w http.ResponseWriter, r *http.Request) {
+	roomID, err := uuid.Parse(chi.URLParam(r, "id"))
+	if err != nil {
+		writeError(w, http.StatusBadRequest, "INVALID_ROOM_ID", "invalid room id")
+		return
+	}
+
+	room, err := h.rooms.GetByID(roomID)
+	if err != nil {
+		writeError(w, http.StatusNotFound, "NOT_FOUND", "room not found")
+		return
+	}
+
+	roomMembers, err := h.rooms.ListRoomMembers(roomID)
+	if err != nil {
+		writeError(w, http.StatusInternalServerError, "INTERNAL_ERROR", "failed to get room members")
+		return
+	}
+
+	members := make([]RoomMemberResponse, len(roomMembers))
+	for i, m := range roomMembers {
+		var lastConnectedAt *time.Time
+		if !m.LastConnectedAt.IsZero() {
+			lastConnectedAt = &m.LastConnectedAt
+		}
+
+		members[i] = RoomMemberResponse{
+			ID:              m.UserID.String(),
+			Name:            m.Name,
+			LastConnectedAt: lastConnectedAt,
+		}
+	}
+
+	name := room.Name
+	if name == "" {
+		name = room.ID.String()[:8]
+	}
+
+	resp := GetRoomResponse{
+		ID:          room.ID.String(),
+		Name:        name,
+		CreatedAt:   room.CreatedAt.String(),
+		UpdatedAt:   room.UpdatedAt.String(),
+		MemberCount: len(members),
+		Members:     members,
 	}
 
 	w.Header().Set("Content-Type", "application/json")

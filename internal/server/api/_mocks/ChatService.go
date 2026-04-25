@@ -5,9 +5,7 @@
 package mocks
 
 import (
-	"time"
-
-	"github.com/EwanGreer/chatatui/internal/service"
+	"github.com/EwanGreer/chatatui/internal/domain"
 	"github.com/google/uuid"
 	mock "github.com/stretchr/testify/mock"
 )
@@ -39,155 +37,24 @@ func (_m *MockChatService) EXPECT() *MockChatService_Expecter {
 	return &MockChatService_Expecter{mock: &_m.Mock}
 }
 
-// AddRoomMember provides a mock function for the type MockChatService
-func (_mock *MockChatService) AddRoomMember(roomID uuid.UUID, userID uuid.UUID) error {
-	ret := _mock.Called(roomID, userID)
-
-	if len(ret) == 0 {
-		panic("no return value specified for AddRoomMember")
-	}
-
-	var r0 error
-	if returnFunc, ok := ret.Get(0).(func(uuid.UUID, uuid.UUID) error); ok {
-		r0 = returnFunc(roomID, userID)
-	} else {
-		r0 = ret.Error(0)
-	}
-	return r0
-}
-
-// MockChatService_AddRoomMember_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'AddRoomMember'
-type MockChatService_AddRoomMember_Call struct {
-	*mock.Call
-}
-
-// AddRoomMember is a helper method to define mock.On call
-//   - roomID uuid.UUID
-//   - userID uuid.UUID
-func (_e *MockChatService_Expecter) AddRoomMember(roomID interface{}, userID interface{}) *MockChatService_AddRoomMember_Call {
-	return &MockChatService_AddRoomMember_Call{Call: _e.mock.On("AddRoomMember", roomID, userID)}
-}
-
-func (_c *MockChatService_AddRoomMember_Call) Run(run func(roomID uuid.UUID, userID uuid.UUID)) *MockChatService_AddRoomMember_Call {
-	_c.Call.Run(func(args mock.Arguments) {
-		var arg0 uuid.UUID
-		if args[0] != nil {
-			arg0 = args[0].(uuid.UUID)
-		}
-		var arg1 uuid.UUID
-		if args[1] != nil {
-			arg1 = args[1].(uuid.UUID)
-		}
-		run(
-			arg0,
-			arg1,
-		)
-	})
-	return _c
-}
-
-func (_c *MockChatService_AddRoomMember_Call) Return(err error) *MockChatService_AddRoomMember_Call {
-	_c.Call.Return(err)
-	return _c
-}
-
-func (_c *MockChatService_AddRoomMember_Call) RunAndReturn(run func(roomID uuid.UUID, userID uuid.UUID) error) *MockChatService_AddRoomMember_Call {
-	_c.Call.Return(run)
-	return _c
-}
-
-// GetMessageHistory provides a mock function for the type MockChatService
-func (_mock *MockChatService) GetMessageHistory(roomID uuid.UUID, limit int, offset int) ([]service.MessageInfo, error) {
-	ret := _mock.Called(roomID, limit, offset)
-
-	if len(ret) == 0 {
-		panic("no return value specified for GetMessageHistory")
-	}
-
-	var r0 []service.MessageInfo
-	var r1 error
-	if returnFunc, ok := ret.Get(0).(func(uuid.UUID, int, int) ([]service.MessageInfo, error)); ok {
-		return returnFunc(roomID, limit, offset)
-	}
-	if returnFunc, ok := ret.Get(0).(func(uuid.UUID, int, int) []service.MessageInfo); ok {
-		r0 = returnFunc(roomID, limit, offset)
-	} else {
-		if ret.Get(0) != nil {
-			r0 = ret.Get(0).([]service.MessageInfo)
-		}
-	}
-	if returnFunc, ok := ret.Get(1).(func(uuid.UUID, int, int) error); ok {
-		r1 = returnFunc(roomID, limit, offset)
-	} else {
-		r1 = ret.Error(1)
-	}
-	return r0, r1
-}
-
-// MockChatService_GetMessageHistory_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'GetMessageHistory'
-type MockChatService_GetMessageHistory_Call struct {
-	*mock.Call
-}
-
-// GetMessageHistory is a helper method to define mock.On call
-//   - roomID uuid.UUID
-//   - limit int
-//   - offset int
-func (_e *MockChatService_Expecter) GetMessageHistory(roomID interface{}, limit interface{}, offset interface{}) *MockChatService_GetMessageHistory_Call {
-	return &MockChatService_GetMessageHistory_Call{Call: _e.mock.On("GetMessageHistory", roomID, limit, offset)}
-}
-
-func (_c *MockChatService_GetMessageHistory_Call) Run(run func(roomID uuid.UUID, limit int, offset int)) *MockChatService_GetMessageHistory_Call {
-	_c.Call.Run(func(args mock.Arguments) {
-		var arg0 uuid.UUID
-		if args[0] != nil {
-			arg0 = args[0].(uuid.UUID)
-		}
-		var arg1 int
-		if args[1] != nil {
-			arg1 = args[1].(int)
-		}
-		var arg2 int
-		if args[2] != nil {
-			arg2 = args[2].(int)
-		}
-		run(
-			arg0,
-			arg1,
-			arg2,
-		)
-	})
-	return _c
-}
-
-func (_c *MockChatService_GetMessageHistory_Call) Return(messageInfos []service.MessageInfo, err error) *MockChatService_GetMessageHistory_Call {
-	_c.Call.Return(messageInfos, err)
-	return _c
-}
-
-func (_c *MockChatService_GetMessageHistory_Call) RunAndReturn(run func(roomID uuid.UUID, limit int, offset int) ([]service.MessageInfo, error)) *MockChatService_GetMessageHistory_Call {
-	_c.Call.Return(run)
-	return _c
-}
-
 // GetRoom provides a mock function for the type MockChatService
-func (_mock *MockChatService) GetRoom(id uuid.UUID) (*service.RoomInfo, error) {
+func (_mock *MockChatService) GetRoom(id uuid.UUID) (*domain.Room, error) {
 	ret := _mock.Called(id)
 
 	if len(ret) == 0 {
 		panic("no return value specified for GetRoom")
 	}
 
-	var r0 *service.RoomInfo
+	var r0 *domain.Room
 	var r1 error
-	if returnFunc, ok := ret.Get(0).(func(uuid.UUID) (*service.RoomInfo, error)); ok {
+	if returnFunc, ok := ret.Get(0).(func(uuid.UUID) (*domain.Room, error)); ok {
 		return returnFunc(id)
 	}
-	if returnFunc, ok := ret.Get(0).(func(uuid.UUID) *service.RoomInfo); ok {
+	if returnFunc, ok := ret.Get(0).(func(uuid.UUID) *domain.Room); ok {
 		r0 = returnFunc(id)
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(*service.RoomInfo)
+			r0 = ret.Get(0).(*domain.Room)
 		}
 	}
 	if returnFunc, ok := ret.Get(1).(func(uuid.UUID) error); ok {
@@ -198,13 +65,10 @@ func (_mock *MockChatService) GetRoom(id uuid.UUID) (*service.RoomInfo, error) {
 	return r0, r1
 }
 
-// MockChatService_GetRoom_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'GetRoom'
 type MockChatService_GetRoom_Call struct {
 	*mock.Call
 }
 
-// GetRoom is a helper method to define mock.On call
-//   - id uuid.UUID
 func (_e *MockChatService_Expecter) GetRoom(id interface{}) *MockChatService_GetRoom_Call {
 	return &MockChatService_GetRoom_Call{Call: _e.mock.On("GetRoom", id)}
 }
@@ -215,71 +79,119 @@ func (_c *MockChatService_GetRoom_Call) Run(run func(id uuid.UUID)) *MockChatSer
 		if args[0] != nil {
 			arg0 = args[0].(uuid.UUID)
 		}
-		run(
-			arg0,
-		)
+		run(arg0)
 	})
 	return _c
 }
 
-func (_c *MockChatService_GetRoom_Call) Return(roomInfo *service.RoomInfo, err error) *MockChatService_GetRoom_Call {
-	_c.Call.Return(roomInfo, err)
+func (_c *MockChatService_GetRoom_Call) Return(room *domain.Room, err error) *MockChatService_GetRoom_Call {
+	_c.Call.Return(room, err)
 	return _c
 }
 
-func (_c *MockChatService_GetRoom_Call) RunAndReturn(run func(id uuid.UUID) (*service.RoomInfo, error)) *MockChatService_GetRoom_Call {
+func (_c *MockChatService_GetRoom_Call) RunAndReturn(run func(id uuid.UUID) (*domain.Room, error)) *MockChatService_GetRoom_Call {
 	_c.Call.Return(run)
 	return _c
 }
 
-// PersistMessage provides a mock function for the type MockChatService
-func (_mock *MockChatService) PersistMessage(content []byte, senderID uuid.UUID, roomID uuid.UUID) (uuid.UUID, time.Time, error) {
-	ret := _mock.Called(content, senderID, roomID)
+// JoinRoom provides a mock function for the type MockChatService
+func (_mock *MockChatService) JoinRoom(roomID uuid.UUID, userID uuid.UUID) ([]domain.WireMessage, error) {
+	ret := _mock.Called(roomID, userID)
 
 	if len(ret) == 0 {
-		panic("no return value specified for PersistMessage")
+		panic("no return value specified for JoinRoom")
 	}
 
-	var r0 uuid.UUID
-	var r1 time.Time
-	var r2 error
-	if returnFunc, ok := ret.Get(0).(func([]byte, uuid.UUID, uuid.UUID) (uuid.UUID, time.Time, error)); ok {
-		return returnFunc(content, senderID, roomID)
+	var r0 []domain.WireMessage
+	var r1 error
+	if returnFunc, ok := ret.Get(0).(func(uuid.UUID, uuid.UUID) ([]domain.WireMessage, error)); ok {
+		return returnFunc(roomID, userID)
 	}
-	if returnFunc, ok := ret.Get(0).(func([]byte, uuid.UUID, uuid.UUID) uuid.UUID); ok {
-		r0 = returnFunc(content, senderID, roomID)
+	if returnFunc, ok := ret.Get(0).(func(uuid.UUID, uuid.UUID) []domain.WireMessage); ok {
+		r0 = returnFunc(roomID, userID)
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(uuid.UUID)
+			r0 = ret.Get(0).([]domain.WireMessage)
 		}
 	}
-	if returnFunc, ok := ret.Get(1).(func([]byte, uuid.UUID, uuid.UUID) time.Time); ok {
-		r1 = returnFunc(content, senderID, roomID)
+	if returnFunc, ok := ret.Get(1).(func(uuid.UUID, uuid.UUID) error); ok {
+		r1 = returnFunc(roomID, userID)
 	} else {
-		r1 = ret.Get(1).(time.Time)
+		r1 = ret.Error(1)
 	}
-	if returnFunc, ok := ret.Get(2).(func([]byte, uuid.UUID, uuid.UUID) error); ok {
-		r2 = returnFunc(content, senderID, roomID)
-	} else {
-		r2 = ret.Error(2)
-	}
-	return r0, r1, r2
+	return r0, r1
 }
 
-// MockChatService_PersistMessage_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'PersistMessage'
-type MockChatService_PersistMessage_Call struct {
+type MockChatService_JoinRoom_Call struct {
 	*mock.Call
 }
 
-// PersistMessage is a helper method to define mock.On call
-//   - content []byte
-//   - senderID uuid.UUID
-//   - roomID uuid.UUID
-func (_e *MockChatService_Expecter) PersistMessage(content interface{}, senderID interface{}, roomID interface{}) *MockChatService_PersistMessage_Call {
-	return &MockChatService_PersistMessage_Call{Call: _e.mock.On("PersistMessage", content, senderID, roomID)}
+func (_e *MockChatService_Expecter) JoinRoom(roomID interface{}, userID interface{}) *MockChatService_JoinRoom_Call {
+	return &MockChatService_JoinRoom_Call{Call: _e.mock.On("JoinRoom", roomID, userID)}
 }
 
-func (_c *MockChatService_PersistMessage_Call) Run(run func(content []byte, senderID uuid.UUID, roomID uuid.UUID)) *MockChatService_PersistMessage_Call {
+func (_c *MockChatService_JoinRoom_Call) Run(run func(roomID uuid.UUID, userID uuid.UUID)) *MockChatService_JoinRoom_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		var arg0 uuid.UUID
+		if args[0] != nil {
+			arg0 = args[0].(uuid.UUID)
+		}
+		var arg1 uuid.UUID
+		if args[1] != nil {
+			arg1 = args[1].(uuid.UUID)
+		}
+		run(arg0, arg1)
+	})
+	return _c
+}
+
+func (_c *MockChatService_JoinRoom_Call) Return(messages []domain.WireMessage, err error) *MockChatService_JoinRoom_Call {
+	_c.Call.Return(messages, err)
+	return _c
+}
+
+func (_c *MockChatService_JoinRoom_Call) RunAndReturn(run func(uuid.UUID, uuid.UUID) ([]domain.WireMessage, error)) *MockChatService_JoinRoom_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
+// PublishMessage provides a mock function for the type MockChatService
+func (_mock *MockChatService) PublishMessage(content []byte, senderID uuid.UUID, senderName string, roomID uuid.UUID) (*domain.WireMessage, error) {
+	ret := _mock.Called(content, senderID, senderName, roomID)
+
+	if len(ret) == 0 {
+		panic("no return value specified for PublishMessage")
+	}
+
+	var r0 *domain.WireMessage
+	var r1 error
+	if returnFunc, ok := ret.Get(0).(func([]byte, uuid.UUID, string, uuid.UUID) (*domain.WireMessage, error)); ok {
+		return returnFunc(content, senderID, senderName, roomID)
+	}
+	if returnFunc, ok := ret.Get(0).(func([]byte, uuid.UUID, string, uuid.UUID) *domain.WireMessage); ok {
+		r0 = returnFunc(content, senderID, senderName, roomID)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*domain.WireMessage)
+		}
+	}
+	if returnFunc, ok := ret.Get(1).(func([]byte, uuid.UUID, string, uuid.UUID) error); ok {
+		r1 = returnFunc(content, senderID, senderName, roomID)
+	} else {
+		r1 = ret.Error(1)
+	}
+	return r0, r1
+}
+
+type MockChatService_PublishMessage_Call struct {
+	*mock.Call
+}
+
+func (_e *MockChatService_Expecter) PublishMessage(content interface{}, senderID interface{}, senderName interface{}, roomID interface{}) *MockChatService_PublishMessage_Call {
+	return &MockChatService_PublishMessage_Call{Call: _e.mock.On("PublishMessage", content, senderID, senderName, roomID)}
+}
+
+func (_c *MockChatService_PublishMessage_Call) Run(run func(content []byte, senderID uuid.UUID, senderName string, roomID uuid.UUID)) *MockChatService_PublishMessage_Call {
 	_c.Call.Run(func(args mock.Arguments) {
 		var arg0 []byte
 		if args[0] != nil {
@@ -289,25 +201,25 @@ func (_c *MockChatService_PersistMessage_Call) Run(run func(content []byte, send
 		if args[1] != nil {
 			arg1 = args[1].(uuid.UUID)
 		}
-		var arg2 uuid.UUID
+		var arg2 string
 		if args[2] != nil {
-			arg2 = args[2].(uuid.UUID)
+			arg2 = args[2].(string)
 		}
-		run(
-			arg0,
-			arg1,
-			arg2,
-		)
+		var arg3 uuid.UUID
+		if args[3] != nil {
+			arg3 = args[3].(uuid.UUID)
+		}
+		run(arg0, arg1, arg2, arg3)
 	})
 	return _c
 }
 
-func (_c *MockChatService_PersistMessage_Call) Return(uUID uuid.UUID, time1 time.Time, err error) *MockChatService_PersistMessage_Call {
-	_c.Call.Return(uUID, time1, err)
+func (_c *MockChatService_PublishMessage_Call) Return(msg *domain.WireMessage, err error) *MockChatService_PublishMessage_Call {
+	_c.Call.Return(msg, err)
 	return _c
 }
 
-func (_c *MockChatService_PersistMessage_Call) RunAndReturn(run func(content []byte, senderID uuid.UUID, roomID uuid.UUID) (uuid.UUID, time.Time, error)) *MockChatService_PersistMessage_Call {
+func (_c *MockChatService_PublishMessage_Call) RunAndReturn(run func([]byte, uuid.UUID, string, uuid.UUID) (*domain.WireMessage, error)) *MockChatService_PublishMessage_Call {
 	_c.Call.Return(run)
 	return _c
 }

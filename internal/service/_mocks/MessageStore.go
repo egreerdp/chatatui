@@ -5,7 +5,7 @@
 package mocks
 
 import (
-	"github.com/EwanGreer/chatatui/internal/repository"
+	"github.com/EwanGreer/chatatui/internal/domain"
 	"github.com/google/uuid"
 	mock "github.com/stretchr/testify/mock"
 )
@@ -38,7 +38,7 @@ func (_m *MockMessageStore) EXPECT() *MockMessageStore_Expecter {
 }
 
 // Create provides a mock function for the type MockMessageStore
-func (_mock *MockMessageStore) Create(msg *repository.Message) error {
+func (_mock *MockMessageStore) Create(msg *domain.Message) error {
 	ret := _mock.Called(msg)
 
 	if len(ret) == 0 {
@@ -46,7 +46,7 @@ func (_mock *MockMessageStore) Create(msg *repository.Message) error {
 	}
 
 	var r0 error
-	if returnFunc, ok := ret.Get(0).(func(*repository.Message) error); ok {
+	if returnFunc, ok := ret.Get(0).(func(*domain.Message) error); ok {
 		r0 = returnFunc(msg)
 	} else {
 		r0 = ret.Error(0)
@@ -60,16 +60,16 @@ type MockMessageStore_Create_Call struct {
 }
 
 // Create is a helper method to define mock.On call
-//   - msg *repository.Message
+//   - msg *domain.Message
 func (_e *MockMessageStore_Expecter) Create(msg interface{}) *MockMessageStore_Create_Call {
 	return &MockMessageStore_Create_Call{Call: _e.mock.On("Create", msg)}
 }
 
-func (_c *MockMessageStore_Create_Call) Run(run func(msg *repository.Message)) *MockMessageStore_Create_Call {
+func (_c *MockMessageStore_Create_Call) Run(run func(msg *domain.Message)) *MockMessageStore_Create_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		var arg0 *repository.Message
+		var arg0 *domain.Message
 		if args[0] != nil {
-			arg0 = args[0].(*repository.Message)
+			arg0 = args[0].(*domain.Message)
 		}
 		run(
 			arg0,
@@ -83,29 +83,29 @@ func (_c *MockMessageStore_Create_Call) Return(err error) *MockMessageStore_Crea
 	return _c
 }
 
-func (_c *MockMessageStore_Create_Call) RunAndReturn(run func(msg *repository.Message) error) *MockMessageStore_Create_Call {
+func (_c *MockMessageStore_Create_Call) RunAndReturn(run func(msg *domain.Message) error) *MockMessageStore_Create_Call {
 	_c.Call.Return(run)
 	return _c
 }
 
 // GetByRoom provides a mock function for the type MockMessageStore
-func (_mock *MockMessageStore) GetByRoom(roomID uuid.UUID, limit int, offset int) ([]repository.Message, error) {
+func (_mock *MockMessageStore) GetByRoom(roomID uuid.UUID, limit int, offset int) ([]domain.Message, error) {
 	ret := _mock.Called(roomID, limit, offset)
 
 	if len(ret) == 0 {
 		panic("no return value specified for GetByRoom")
 	}
 
-	var r0 []repository.Message
+	var r0 []domain.Message
 	var r1 error
-	if returnFunc, ok := ret.Get(0).(func(uuid.UUID, int, int) ([]repository.Message, error)); ok {
+	if returnFunc, ok := ret.Get(0).(func(uuid.UUID, int, int) ([]domain.Message, error)); ok {
 		return returnFunc(roomID, limit, offset)
 	}
-	if returnFunc, ok := ret.Get(0).(func(uuid.UUID, int, int) []repository.Message); ok {
+	if returnFunc, ok := ret.Get(0).(func(uuid.UUID, int, int) []domain.Message); ok {
 		r0 = returnFunc(roomID, limit, offset)
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).([]repository.Message)
+			r0 = ret.Get(0).([]domain.Message)
 		}
 	}
 	if returnFunc, ok := ret.Get(1).(func(uuid.UUID, int, int) error); ok {
@@ -152,12 +152,12 @@ func (_c *MockMessageStore_GetByRoom_Call) Run(run func(roomID uuid.UUID, limit 
 	return _c
 }
 
-func (_c *MockMessageStore_GetByRoom_Call) Return(messages []repository.Message, err error) *MockMessageStore_GetByRoom_Call {
+func (_c *MockMessageStore_GetByRoom_Call) Return(messages []domain.Message, err error) *MockMessageStore_GetByRoom_Call {
 	_c.Call.Return(messages, err)
 	return _c
 }
 
-func (_c *MockMessageStore_GetByRoom_Call) RunAndReturn(run func(roomID uuid.UUID, limit int, offset int) ([]repository.Message, error)) *MockMessageStore_GetByRoom_Call {
+func (_c *MockMessageStore_GetByRoom_Call) RunAndReturn(run func(roomID uuid.UUID, limit int, offset int) ([]domain.Message, error)) *MockMessageStore_GetByRoom_Call {
 	_c.Call.Return(run)
 	return _c
 }

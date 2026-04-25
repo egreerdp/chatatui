@@ -68,9 +68,7 @@ func (m Model) renderSidebar() string {
 		roomList += name + "\n"
 	}
 
-	if m.err != nil {
-		roomList = styleError.Render("Error: " + m.err.Error())
-	} else if len(m.rooms) == 0 {
+	if len(m.rooms) == 0 {
 		roomList = styleMuted.Render("(no rooms)")
 	}
 
@@ -211,6 +209,9 @@ func (m Model) charCountIndicator() string {
 }
 
 func (m Model) renderStatusLine() string {
+	if m.flash != "" {
+		return styleError.Render("  ✕ " + m.flash)
+	}
 	typingText := styleTyping.Render(m.typingLine())
 	counter := m.charCountIndicator()
 	if counter == "" {

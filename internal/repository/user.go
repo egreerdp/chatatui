@@ -4,6 +4,7 @@ import (
 	"crypto/sha256"
 	"encoding/hex"
 
+	"github.com/EwanGreer/chatatui/internal/domain"
 	"github.com/google/uuid"
 	"gorm.io/gorm"
 )
@@ -20,6 +21,14 @@ type User struct {
 	Rooms  []Room `gorm:"many2many:room_members;"`
 }
 
+func userToDomain(row *User) *domain.User {
+	return &domain.User{
+		ID:     row.ID,
+		Name:   row.Name,
+		APIKey: row.APIKey,
+	}
+}
+
 type UserRepository struct {
 	db *gorm.DB
 }
@@ -28,20 +37,31 @@ func NewUserRepository(db *gorm.DB) *UserRepository {
 	return &UserRepository{db: db}
 }
 
-func (r *UserRepository) Create(user *User) error {
-	return r.db.Create(user).Error
+func (r *UserRepository) Create(u *domain.User) error {
+	row := &User{Name: u.Name, APIKey: u.APIKey}
+	if err := r.db.Create(row).Error; err != nil {
+		return err
+	}
+	u.ID = row.ID
+	return nil
 }
 
-func (r *UserRepository) GetByAPIKey(apiKey string) (*User, error) {
-	var user User
-	err := r.db.Where("api_key = ?", HashAPIKey(apiKey)).First(&user).Error
-	return &user, err
+func (r *UserRepository) GetByAPIKey(apiKey string) (*domain.User, error) {
+	var row User
+	err := r.db.Where("api_key = ?", HashAPIKey(apiKey)).First(&row).Error
+	if err != nil {
+		return nil, err
+	}
+	return userToDomain(&row), nil
 }
 
-func (r *UserRepository) GetByID(id uuid.UUID) (*User, error) {
-	var user User
-	err := r.db.First(&user, "id = ?", id).Error
-	return &user, err
+func (r *UserRepository) GetByID(id uuid.UUID) (*domain.User, error) {
+	var row User
+	err := r.db.First(&row, "id = ?", id).Error
+	if err != nil {
+		return nil, err
+	}
+	return userToDomain(&row), nil
 }
 
 func (r *UserRepository) List(limit, offset int) ([]User, error) {

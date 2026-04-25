@@ -1,31 +1,14 @@
 package hub
 
-import (
-	"encoding/json"
-	"time"
-)
+import "github.com/EwanGreer/chatatui/internal/domain"
 
-type MessageType string
+// Type aliases so all hub-internal code keeps compiling without changes.
+type MessageType = domain.WireMessageType
+type Message = domain.WireMessage
 
 const (
-	MessageTypeChat   MessageType = "chat"
-	MessageTypeSystem MessageType = "system"
-	MessageTypeTyping MessageType = "typing"
-	MessageTypeError  MessageType = "error"
+	MessageTypeChat   = domain.WireMessageTypeChat
+	MessageTypeSystem = domain.WireMessageTypeSystem
+	MessageTypeTyping = domain.WireMessageTypeTyping
+	MessageTypeError  = domain.WireMessageTypeError
 )
-
-func (m MessageType) String() string {
-	return string(m)
-}
-
-type WireMessage struct {
-	Type      MessageType `json:"type"`
-	ID        string      `json:"id"`
-	Author    string      `json:"author"`
-	Content   string      `json:"content"`
-	Timestamp time.Time   `json:"timestamp"`
-}
-
-func (m *WireMessage) Marshal() ([]byte, error) {
-	return json.Marshal(m)
-}

@@ -11,3 +11,6 @@ message_history_limit = 50
 room_list_limit = 100
 rate_limit_requests = 100
 rate_limit_window_secs = 60
+
+[server.federation]
+domain = "localhost"

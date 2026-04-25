@@ -5,7 +5,7 @@
 package mocks
 
 import (
-	"github.com/EwanGreer/chatatui/internal/repository"
+	"github.com/EwanGreer/chatatui/internal/domain"
 	mock "github.com/stretchr/testify/mock"
 )
 
@@ -37,23 +37,23 @@ func (_m *MockUserLookup) EXPECT() *MockUserLookup_Expecter {
 }
 
 // GetByAPIKey provides a mock function for the type MockUserLookup
-func (_mock *MockUserLookup) GetByAPIKey(apiKey string) (*repository.User, error) {
+func (_mock *MockUserLookup) GetByAPIKey(apiKey string) (*domain.User, error) {
 	ret := _mock.Called(apiKey)
 
 	if len(ret) == 0 {
 		panic("no return value specified for GetByAPIKey")
 	}
 
-	var r0 *repository.User
+	var r0 *domain.User
 	var r1 error
-	if returnFunc, ok := ret.Get(0).(func(string) (*repository.User, error)); ok {
+	if returnFunc, ok := ret.Get(0).(func(string) (*domain.User, error)); ok {
 		return returnFunc(apiKey)
 	}
-	if returnFunc, ok := ret.Get(0).(func(string) *repository.User); ok {
+	if returnFunc, ok := ret.Get(0).(func(string) *domain.User); ok {
 		r0 = returnFunc(apiKey)
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(*repository.User)
+			r0 = ret.Get(0).(*domain.User)
 		}
 	}
 	if returnFunc, ok := ret.Get(1).(func(string) error); ok {
@@ -88,12 +88,12 @@ func (_c *MockUserLookup_GetByAPIKey_Call) Run(run func(apiKey string)) *MockUse
 	return _c
 }
 
-func (_c *MockUserLookup_GetByAPIKey_Call) Return(user *repository.User, err error) *MockUserLookup_GetByAPIKey_Call {
+func (_c *MockUserLookup_GetByAPIKey_Call) Return(user *domain.User, err error) *MockUserLookup_GetByAPIKey_Call {
 	_c.Call.Return(user, err)
 	return _c
 }
 
-func (_c *MockUserLookup_GetByAPIKey_Call) RunAndReturn(run func(apiKey string) (*repository.User, error)) *MockUserLookup_GetByAPIKey_Call {
+func (_c *MockUserLookup_GetByAPIKey_Call) RunAndReturn(run func(apiKey string) (*domain.User, error)) *MockUserLookup_GetByAPIKey_Call {
 	_c.Call.Return(run)
 	return _c
 }

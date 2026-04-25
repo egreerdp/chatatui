@@ -5,7 +5,7 @@
 package mocks
 
 import (
-	"github.com/EwanGreer/chatatui/internal/repository"
+	"github.com/EwanGreer/chatatui/internal/domain"
 	"github.com/google/uuid"
 	mock "github.com/stretchr/testify/mock"
 )
@@ -95,23 +95,23 @@ func (_c *MockRoomStore_AddMember_Call) RunAndReturn(run func(roomID uuid.UUID, 
 }
 
 // GetByID provides a mock function for the type MockRoomStore
-func (_mock *MockRoomStore) GetByID(id uuid.UUID) (*repository.Room, error) {
+func (_mock *MockRoomStore) GetByID(id uuid.UUID) (*domain.Room, error) {
 	ret := _mock.Called(id)
 
 	if len(ret) == 0 {
 		panic("no return value specified for GetByID")
 	}
 
-	var r0 *repository.Room
+	var r0 *domain.Room
 	var r1 error
-	if returnFunc, ok := ret.Get(0).(func(uuid.UUID) (*repository.Room, error)); ok {
+	if returnFunc, ok := ret.Get(0).(func(uuid.UUID) (*domain.Room, error)); ok {
 		return returnFunc(id)
 	}
-	if returnFunc, ok := ret.Get(0).(func(uuid.UUID) *repository.Room); ok {
+	if returnFunc, ok := ret.Get(0).(func(uuid.UUID) *domain.Room); ok {
 		r0 = returnFunc(id)
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(*repository.Room)
+			r0 = ret.Get(0).(*domain.Room)
 		}
 	}
 	if returnFunc, ok := ret.Get(1).(func(uuid.UUID) error); ok {
@@ -146,12 +146,12 @@ func (_c *MockRoomStore_GetByID_Call) Run(run func(id uuid.UUID)) *MockRoomStore
 	return _c
 }
 
-func (_c *MockRoomStore_GetByID_Call) Return(room *repository.Room, err error) *MockRoomStore_GetByID_Call {
+func (_c *MockRoomStore_GetByID_Call) Return(room *domain.Room, err error) *MockRoomStore_GetByID_Call {
 	_c.Call.Return(room, err)
 	return _c
 }
 
-func (_c *MockRoomStore_GetByID_Call) RunAndReturn(run func(id uuid.UUID) (*repository.Room, error)) *MockRoomStore_GetByID_Call {
+func (_c *MockRoomStore_GetByID_Call) RunAndReturn(run func(id uuid.UUID) (*domain.Room, error)) *MockRoomStore_GetByID_Call {
 	_c.Call.Return(run)
 	return _c
 }

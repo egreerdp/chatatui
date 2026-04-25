@@ -8,7 +8,7 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/EwanGreer/chatatui/internal/server/hub"
+	"github.com/EwanGreer/chatatui/internal/domain"
 	"github.com/charmbracelet/bubbles/textinput"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/coder/websocket"
@@ -83,6 +83,12 @@ func (m Model) createRoom(name string) tea.Cmd {
 	}
 }
 
+func clearFlashCmd() tea.Cmd {
+	return tea.Tick(4*time.Second, func(time.Time) tea.Msg {
+		return clearFlashMsg{}
+	})
+}
+
 func (m Model) tickCmd() tea.Cmd {
 	return tea.Tick(5*time.Second, func(t time.Time) tea.Msg {
 		return tickMsg(t)
@@ -128,7 +134,7 @@ func (m *Model) listenForMessages() tea.Cmd {
 
 		var wire wireMessage
 		if err := json.Unmarshal(data, &wire); err == nil {
-			if wire.Type == hub.MessageTypeTyping.String() {
+			if wire.Type == domain.WireMessageTypeTyping.String() {
 				return typingMsg(wire.Author)
 			}
 			return incomingMsg{formatted: formatWireMessage(data), author: wire.Author}
@@ -149,7 +155,7 @@ func sendMessageCmd(conn *websocket.Conn, text string) tea.Cmd {
 
 func sendTypingCmd(conn *websocket.Conn) tea.Cmd {
 	return func() tea.Msg {
-		msg := &hub.WireMessage{Type: hub.MessageTypeTyping}
+		msg := &domain.WireMessage{Type: domain.WireMessageTypeTyping}
 		data, err := msg.Marshal()
 		if err != nil {
 			return errMsg(err)

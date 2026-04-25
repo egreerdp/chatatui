@@ -6,11 +6,12 @@ import (
 	"encoding/json"
 	"net/http"
 
+	"github.com/EwanGreer/chatatui/internal/domain"
 	"github.com/EwanGreer/chatatui/internal/repository"
 )
 
 type UserStore interface {
-	Create(user *repository.User) error
+	Create(user *domain.User) error
 }
 
 type RegisterHandler struct {
@@ -47,7 +48,7 @@ func (h *RegisterHandler) Handle(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	user := &repository.User{
+	user := &domain.User{
 		Name:   req.Name,
 		APIKey: repository.HashAPIKey(apiKey),
 	}

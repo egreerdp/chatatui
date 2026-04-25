@@ -6,33 +6,27 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/EwanGreer/chatatui/internal/domain"
 	"github.com/EwanGreer/chatatui/internal/middleware"
-	"github.com/EwanGreer/chatatui/internal/server/hub"
 	"github.com/coder/websocket"
 	"github.com/go-chi/chi/v5"
 	"github.com/google/uuid"
-	"gorm.io/gorm"
 )
 
 type WSHandler struct {
-	hub                 *hub.Hub
-	svc                 ChatService
-	messageHistoryLimit int
+	hub RoomHub
+	svc ChatService
 }
 
-func NewWSHandler(h *hub.Hub, svc ChatService, messageHistoryLimit int) *WSHandler {
+func NewWSHandler(h RoomHub, svc ChatService) *WSHandler {
 	go func() {
 		for {
 			time.Sleep(time.Second * 5)
-			slog.Debug("hub status", "room_count", len(h.Rooms))
+			slog.Debug("hub status", "room_count", h.ActiveCount())
 		}
 	}()
 
-	return &WSHandler{
-		hub:                 h,
-		svc:                 svc,
-		messageHistoryLimit: messageHistoryLimit,
-	}
+	return &WSHandler{hub: h, svc: svc}
 }
 
 func (h *WSHandler) Handle(w http.ResponseWriter, r *http.Request) {
@@ -50,7 +44,7 @@ func (h *WSHandler) Handle(w http.ResponseWriter, r *http.Request) {
 
 	roomInfo, err := h.svc.GetRoom(roomUUID)
 	if err != nil {
-		if errors.Is(err, gorm.ErrRecordNotFound) {
+		if errors.Is(err, domain.ErrNotFound) {
 			writeError(w, http.StatusNotFound, "ROOM_NOT_FOUND", "room not found")
 			return
 		}
@@ -65,55 +59,12 @@ func (h *WSHandler) Handle(w http.ResponseWriter, r *http.Request) {
 	}
 	defer func() { _ = conn.CloseNow() }()
 
-	room, err := h.hub.GetRoom(roomUUID)
+	session, err := h.hub.GetOrCreateSession(roomUUID)
 	if err != nil {
-		if !errors.Is(err, hub.ErrRoomNotFound) {
-			_ = conn.Close(websocket.StatusInternalError, "failed to join room")
-			return
-		}
-
-		room, err = h.hub.CreateRoom(roomUUID)
-		if err != nil {
-			_ = conn.Close(websocket.StatusInternalError, "failed to join room")
-			return
-		}
-	}
-
-	user := middleware.UserFromContext(r.Context())
-	if err := h.svc.AddRoomMember(roomInfo.ID, user.ID); err != nil {
-		slog.Error("failed to add room member", "error", err, "room_id", roomInfo.ID, "user_id", user.ID)
-	}
-
-	client := hub.NewClient(conn, user.ID, roomUUID, user.Name)
-	room.Add(client)
-	defer room.Remove(client)
-
-	h.sendHistory(client, roomInfo.ID)
-
-	client.Run(room, h.svc)
-}
-
-func (h *WSHandler) sendHistory(client *hub.Client, roomID uuid.UUID) {
-	messages, err := h.svc.GetMessageHistory(roomID, h.messageHistoryLimit, 0)
-	if err != nil {
-		slog.Error("failed to get message history", "error", err, "room_id", roomID)
+		_ = conn.Close(websocket.StatusInternalError, "failed to join room")
 		return
 	}
 
-	// Send messages in chronological order (oldest first)
-	for i := len(messages) - 1; i >= 0; i-- {
-		wire := &hub.WireMessage{
-			Type:      hub.MessageTypeChat,
-			ID:        messages[i].ID.String(),
-			Author:    messages[i].Author,
-			Content:   messages[i].Content,
-			Timestamp: messages[i].CreatedAt,
-		}
-		wireBytes, err := wire.Marshal()
-		if err != nil {
-			slog.Error("failed to marshal history message", "error", err, "room_id", roomID)
-			continue
-		}
-		client.SendRaw(wireBytes)
-	}
+	user := middleware.UserFromContext(r.Context())
+	newRoomConn(conn, session, roomInfo.ID, user, h.svc).serve()
 }

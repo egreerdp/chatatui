@@ -51,7 +51,7 @@ type Model struct {
 	height          int
 	ready           bool
 	roomIndex       int
-	err             error
+	flash           string
 	conn            *websocket.Conn
 	connectedTo     string
 	state           connState
@@ -61,9 +61,10 @@ type Model struct {
 }
 
 type (
-	roomsMsg     []Room
-	errMsg       error
-	connectedMsg struct {
+	roomsMsg       []Room
+	errMsg         error
+	clearFlashMsg  struct{}
+	connectedMsg   struct {
 		roomID string
 		conn   *websocket.Conn
 	}

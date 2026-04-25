@@ -5,7 +5,8 @@
 package mocks
 
 import (
-	"github.com/EwanGreer/chatatui/internal/repository"
+	"github.com/EwanGreer/chatatui/internal/domain"
+	"github.com/google/uuid"
 	mock "github.com/stretchr/testify/mock"
 )
 
@@ -37,7 +38,7 @@ func (_m *MockRoomStore) EXPECT() *MockRoomStore_Expecter {
 }
 
 // Create provides a mock function for the type MockRoomStore
-func (_mock *MockRoomStore) Create(room *repository.Room) error {
+func (_mock *MockRoomStore) Create(room *domain.Room) error {
 	ret := _mock.Called(room)
 
 	if len(ret) == 0 {
@@ -45,7 +46,7 @@ func (_mock *MockRoomStore) Create(room *repository.Room) error {
 	}
 
 	var r0 error
-	if returnFunc, ok := ret.Get(0).(func(*repository.Room) error); ok {
+	if returnFunc, ok := ret.Get(0).(func(*domain.Room) error); ok {
 		r0 = returnFunc(room)
 	} else {
 		r0 = ret.Error(0)
@@ -59,16 +60,16 @@ type MockRoomStore_Create_Call struct {
 }
 
 // Create is a helper method to define mock.On call
-//   - room *repository.Room
+//   - room *domain.Room
 func (_e *MockRoomStore_Expecter) Create(room interface{}) *MockRoomStore_Create_Call {
 	return &MockRoomStore_Create_Call{Call: _e.mock.On("Create", room)}
 }
 
-func (_c *MockRoomStore_Create_Call) Run(run func(room *repository.Room)) *MockRoomStore_Create_Call {
+func (_c *MockRoomStore_Create_Call) Run(run func(room *domain.Room)) *MockRoomStore_Create_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		var arg0 *repository.Room
+		var arg0 *domain.Room
 		if args[0] != nil {
-			arg0 = args[0].(*repository.Room)
+			arg0 = args[0].(*domain.Room)
 		}
 		run(
 			arg0,
@@ -82,29 +83,91 @@ func (_c *MockRoomStore_Create_Call) Return(err error) *MockRoomStore_Create_Cal
 	return _c
 }
 
-func (_c *MockRoomStore_Create_Call) RunAndReturn(run func(room *repository.Room) error) *MockRoomStore_Create_Call {
+func (_c *MockRoomStore_Create_Call) RunAndReturn(run func(room *domain.Room) error) *MockRoomStore_Create_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
+// GetByID provides a mock function for the type MockRoomStore
+func (_mock *MockRoomStore) GetByID(id uuid.UUID) (*domain.Room, error) {
+	ret := _mock.Called(id)
+
+	if len(ret) == 0 {
+		panic("no return value specified for GetByID")
+	}
+
+	var r0 *domain.Room
+	var r1 error
+	if returnFunc, ok := ret.Get(0).(func(uuid.UUID) (*domain.Room, error)); ok {
+		return returnFunc(id)
+	}
+	if returnFunc, ok := ret.Get(0).(func(uuid.UUID) *domain.Room); ok {
+		r0 = returnFunc(id)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*domain.Room)
+		}
+	}
+	if returnFunc, ok := ret.Get(1).(func(uuid.UUID) error); ok {
+		r1 = returnFunc(id)
+	} else {
+		r1 = ret.Error(1)
+	}
+	return r0, r1
+}
+
+// MockRoomStore_GetByID_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'GetByID'
+type MockRoomStore_GetByID_Call struct {
+	*mock.Call
+}
+
+// GetByID is a helper method to define mock.On call
+//   - id uuid.UUID
+func (_e *MockRoomStore_Expecter) GetByID(id interface{}) *MockRoomStore_GetByID_Call {
+	return &MockRoomStore_GetByID_Call{Call: _e.mock.On("GetByID", id)}
+}
+
+func (_c *MockRoomStore_GetByID_Call) Run(run func(id uuid.UUID)) *MockRoomStore_GetByID_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		var arg0 uuid.UUID
+		if args[0] != nil {
+			arg0 = args[0].(uuid.UUID)
+		}
+		run(
+			arg0,
+		)
+	})
+	return _c
+}
+
+func (_c *MockRoomStore_GetByID_Call) Return(room *domain.Room, err error) *MockRoomStore_GetByID_Call {
+	_c.Call.Return(room, err)
+	return _c
+}
+
+func (_c *MockRoomStore_GetByID_Call) RunAndReturn(run func(id uuid.UUID) (*domain.Room, error)) *MockRoomStore_GetByID_Call {
 	_c.Call.Return(run)
 	return _c
 }
 
 // List provides a mock function for the type MockRoomStore
-func (_mock *MockRoomStore) List(limit int, offset int) ([]repository.Room, error) {
+func (_mock *MockRoomStore) List(limit int, offset int) ([]domain.Room, error) {
 	ret := _mock.Called(limit, offset)
 
 	if len(ret) == 0 {
 		panic("no return value specified for List")
 	}
 
-	var r0 []repository.Room
+	var r0 []domain.Room
 	var r1 error
-	if returnFunc, ok := ret.Get(0).(func(int, int) ([]repository.Room, error)); ok {
+	if returnFunc, ok := ret.Get(0).(func(int, int) ([]domain.Room, error)); ok {
 		return returnFunc(limit, offset)
 	}
-	if returnFunc, ok := ret.Get(0).(func(int, int) []repository.Room); ok {
+	if returnFunc, ok := ret.Get(0).(func(int, int) []domain.Room); ok {
 		r0 = returnFunc(limit, offset)
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).([]repository.Room)
+			r0 = ret.Get(0).([]domain.Room)
 		}
 	}
 	if returnFunc, ok := ret.Get(1).(func(int, int) error); ok {
@@ -145,12 +208,74 @@ func (_c *MockRoomStore_List_Call) Run(run func(limit int, offset int)) *MockRoo
 	return _c
 }
 
-func (_c *MockRoomStore_List_Call) Return(rooms []repository.Room, err error) *MockRoomStore_List_Call {
+func (_c *MockRoomStore_List_Call) Return(rooms []domain.Room, err error) *MockRoomStore_List_Call {
 	_c.Call.Return(rooms, err)
 	return _c
 }
 
-func (_c *MockRoomStore_List_Call) RunAndReturn(run func(limit int, offset int) ([]repository.Room, error)) *MockRoomStore_List_Call {
+func (_c *MockRoomStore_List_Call) RunAndReturn(run func(limit int, offset int) ([]domain.Room, error)) *MockRoomStore_List_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
+// ListRoomMembers provides a mock function for the type MockRoomStore
+func (_mock *MockRoomStore) ListRoomMembers(roomID uuid.UUID) ([]domain.RoomMember, error) {
+	ret := _mock.Called(roomID)
+
+	if len(ret) == 0 {
+		panic("no return value specified for ListRoomMembers")
+	}
+
+	var r0 []domain.RoomMember
+	var r1 error
+	if returnFunc, ok := ret.Get(0).(func(uuid.UUID) ([]domain.RoomMember, error)); ok {
+		return returnFunc(roomID)
+	}
+	if returnFunc, ok := ret.Get(0).(func(uuid.UUID) []domain.RoomMember); ok {
+		r0 = returnFunc(roomID)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).([]domain.RoomMember)
+		}
+	}
+	if returnFunc, ok := ret.Get(1).(func(uuid.UUID) error); ok {
+		r1 = returnFunc(roomID)
+	} else {
+		r1 = ret.Error(1)
+	}
+	return r0, r1
+}
+
+// MockRoomStore_ListRoomMembers_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'ListRoomMembers'
+type MockRoomStore_ListRoomMembers_Call struct {
+	*mock.Call
+}
+
+// ListRoomMembers is a helper method to define mock.On call
+//   - roomID uuid.UUID
+func (_e *MockRoomStore_Expecter) ListRoomMembers(roomID interface{}) *MockRoomStore_ListRoomMembers_Call {
+	return &MockRoomStore_ListRoomMembers_Call{Call: _e.mock.On("ListRoomMembers", roomID)}
+}
+
+func (_c *MockRoomStore_ListRoomMembers_Call) Run(run func(roomID uuid.UUID)) *MockRoomStore_ListRoomMembers_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		var arg0 uuid.UUID
+		if args[0] != nil {
+			arg0 = args[0].(uuid.UUID)
+		}
+		run(
+			arg0,
+		)
+	})
+	return _c
+}
+
+func (_c *MockRoomStore_ListRoomMembers_Call) Return(members []domain.RoomMember, err error) *MockRoomStore_ListRoomMembers_Call {
+	_c.Call.Return(members, err)
+	return _c
+}
+
+func (_c *MockRoomStore_ListRoomMembers_Call) RunAndReturn(run func(roomID uuid.UUID) ([]domain.RoomMember, error)) *MockRoomStore_ListRoomMembers_Call {
 	_c.Call.Return(run)
 	return _c
 }

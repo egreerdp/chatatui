@@ -8,8 +8,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/EwanGreer/chatatui/internal/domain"
 	mocks "github.com/EwanGreer/chatatui/internal/middleware/_mocks"
-	"github.com/EwanGreer/chatatui/internal/repository"
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
@@ -22,14 +22,9 @@ func newRateLimiter(cache RateLimitCache, maxReqs int, windowSecs int) *RateLimi
 
 func requestWithUser(userID uuid.UUID) *http.Request {
 	r := httptest.NewRequest(http.MethodGet, "/", nil)
-	user := &repository.User{}
-	user.ID = userID
-	ctx := contextWithUser(r.Context(), user)
+	user := &domain.User{ID: userID}
+	ctx := context.WithValue(r.Context(), userContextKey, user)
 	return r.WithContext(ctx)
-}
-
-func contextWithUser(ctx context.Context, user *repository.User) context.Context {
-	return context.WithValue(ctx, userContextKey, user)
 }
 
 func okHandler() http.Handler {

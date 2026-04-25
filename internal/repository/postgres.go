@@ -20,7 +20,11 @@ func NewPostgresDB(dsn string) (*PostgresDB, error) {
 		return nil, fmt.Errorf("connecting to database: %w", err)
 	}
 
-	if err := db.AutoMigrate(&User{}, &Room{}, &Message{}); err != nil {
+	if err := db.SetupJoinTable(&Room{}, "Members", &RoomMember{}); err != nil {
+		return nil, fmt.Errorf("setting up join table: %w", err)
+	}
+
+	if err := db.AutoMigrate(&User{}, &Room{}, &Message{}, &RoomMember{}); err != nil {
 		return nil, fmt.Errorf("migrating database: %w", err)
 	}
 

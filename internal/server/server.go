@@ -4,22 +4,21 @@ import (
 	"context"
 	"net/http"
 
-	"github.com/EwanGreer/chatatui/internal/repository"
 	"github.com/EwanGreer/chatatui/internal/server/api"
 )
 
 type ChatServer struct {
-	handler *api.Handler
-	srv     *http.Server
-	addr    string
-	db      *repository.PostgresDB
+	handler    *api.Handler
+	srv        *http.Server
+	addr       string
+	onShutdown func()
 }
 
-func NewChatServer(h *api.Handler, addr string, db *repository.PostgresDB) *ChatServer {
+func NewChatServer(h *api.Handler, addr string, onShutdown func()) *ChatServer {
 	return &ChatServer{
-		handler: h,
-		addr:    addr,
-		db:      db,
+		handler:    h,
+		addr:       addr,
+		onShutdown: onShutdown,
 	}
 }
 
@@ -33,8 +32,8 @@ func (cs *ChatServer) Start() error {
 }
 
 func (cs *ChatServer) Stop(ctx context.Context) error {
-	if cs.handler != nil && cs.handler.Hub != nil {
-		cs.handler.Hub.Shutdown()
+	if cs.onShutdown != nil {
+		cs.onShutdown()
 	}
 
 	if cs.srv != nil {

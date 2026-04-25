@@ -6,6 +6,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/EwanGreer/chatatui/internal/domain"
 	"github.com/google/uuid"
 	tcpostgres "github.com/testcontainers/testcontainers-go/modules/postgres"
 	"gorm.io/driver/postgres"
@@ -59,18 +60,18 @@ func truncate(t *testing.T) {
 
 // helpers
 
-func createUser(t *testing.T, name, apiKey string) *User {
+func createUser(t *testing.T, name, apiKey string) *domain.User {
 	t.Helper()
-	u := &User{Name: name, APIKey: apiKey}
+	u := &domain.User{Name: name, APIKey: apiKey}
 	if err := NewUserRepository(testDB).Create(u); err != nil {
 		t.Fatalf("createUser: %v", err)
 	}
 	return u
 }
 
-func createRoom(t *testing.T, name string) *Room {
+func createRoom(t *testing.T, name string) *domain.Room {
 	t.Helper()
-	r := &Room{Name: name}
+	r := &domain.Room{Name: name}
 	if err := NewRoomRepository(testDB).Create(r); err != nil {
 		t.Fatalf("createRoom: %v", err)
 	}
@@ -83,7 +84,7 @@ func TestUserRepository_CreateAndGetByAPIKey(t *testing.T) {
 	truncate(t)
 	repo := NewUserRepository(testDB)
 
-	u := &User{Name: "alice", APIKey: HashAPIKey("secret-key")}
+	u := &domain.User{Name: "alice", APIKey: HashAPIKey("secret-key")}
 	if err := repo.Create(u); err != nil {
 		t.Fatalf("Create: %v", err)
 	}
@@ -115,10 +116,10 @@ func TestUserRepository_DuplicateAPIKey_Rejected(t *testing.T) {
 	repo := NewUserRepository(testDB)
 
 	key := HashAPIKey("same-key")
-	if err := repo.Create(&User{Name: "alice", APIKey: key}); err != nil {
+	if err := repo.Create(&domain.User{Name: "alice", APIKey: key}); err != nil {
 		t.Fatalf("first Create: %v", err)
 	}
-	if err := repo.Create(&User{Name: "bob", APIKey: key}); err == nil {
+	if err := repo.Create(&domain.User{Name: "bob", APIKey: key}); err == nil {
 		t.Fatal("expected unique constraint violation, got nil")
 	}
 }
@@ -142,7 +143,7 @@ func TestRoomRepository_CreateAndGetByID(t *testing.T) {
 	truncate(t)
 	repo := NewRoomRepository(testDB)
 
-	r := &Room{Name: "general"}
+	r := &domain.Room{Name: "general"}
 	if err := repo.Create(r); err != nil {
 		t.Fatalf("Create: %v", err)
 	}
@@ -174,7 +175,7 @@ func TestRoomRepository_List_OrderedByCreatedAt(t *testing.T) {
 
 	names := []string{"alpha", "beta", "gamma"}
 	for _, n := range names {
-		r := &Room{Name: n}
+		r := &domain.Room{Name: n}
 		if err := repo.Create(r); err != nil {
 			t.Fatalf("Create %s: %v", n, err)
 		}
@@ -199,7 +200,7 @@ func TestRoomRepository_List_RespectsLimit(t *testing.T) {
 	repo := NewRoomRepository(testDB)
 
 	for i := 0; i < 5; i++ {
-		if err := repo.Create(&Room{Name: "room"}); err != nil {
+		if err := repo.Create(&domain.Room{Name: "room"}); err != nil {
 			t.Fatalf("Create: %v", err)
 		}
 	}
@@ -227,7 +228,7 @@ func TestRoomRepository_AddAndRemoveMember(t *testing.T) {
 	if err != nil {
 		t.Fatalf("GetByID: %v", err)
 	}
-	if len(got.Members) != 1 || got.Members[0].ID != u.ID {
+	if len(got.Members) != 1 || got.Members[0].UserID != u.ID {
 		t.Errorf("expected member alice, got %+v", got.Members)
 	}
 
@@ -268,7 +269,7 @@ func TestMessageRepository_CreateAndGetByRoom(t *testing.T) {
 	r := createRoom(t, "general")
 	repo := NewMessageRepository(testDB)
 
-	msg := &Message{Content: []byte("hello"), SenderID: u.ID, RoomID: r.ID}
+	msg := &domain.Message{Content: "hello", SenderID: u.ID, RoomID: r.ID}
 	if err := repo.Create(msg); err != nil {
 		t.Fatalf("Create: %v", err)
 	}
@@ -283,11 +284,11 @@ func TestMessageRepository_CreateAndGetByRoom(t *testing.T) {
 	if len(messages) != 1 {
 		t.Fatalf("expected 1 message, got %d", len(messages))
 	}
-	if string(messages[0].Content) != "hello" {
+	if messages[0].Content != "hello" {
 		t.Errorf("expected content hello, got %s", messages[0].Content)
 	}
-	if messages[0].Sender.Name != "alice" {
-		t.Errorf("expected sender alice, got %s", messages[0].Sender.Name)
+	if messages[0].Author != "alice" {
+		t.Errorf("expected author alice, got %s", messages[0].Author)
 	}
 }
 
@@ -298,7 +299,7 @@ func TestMessageRepository_GetByRoom_OrderedDescending(t *testing.T) {
 	repo := NewMessageRepository(testDB)
 
 	for _, content := range []string{"first", "second", "third"} {
-		if err := repo.Create(&Message{Content: []byte(content), SenderID: u.ID, RoomID: r.ID}); err != nil {
+		if err := repo.Create(&domain.Message{Content: content, SenderID: u.ID, RoomID: r.ID}); err != nil {
 			t.Fatalf("Create: %v", err)
 		}
 		time.Sleep(2 * time.Millisecond)
@@ -320,7 +321,7 @@ func TestMessageRepository_GetByRoom_RespectsLimitAndOffset(t *testing.T) {
 	repo := NewMessageRepository(testDB)
 
 	for i := 0; i < 5; i++ {
-		if err := repo.Create(&Message{Content: []byte("msg"), SenderID: u.ID, RoomID: r.ID}); err != nil {
+		if err := repo.Create(&domain.Message{Content: "msg", SenderID: u.ID, RoomID: r.ID}); err != nil {
 			t.Fatalf("Create: %v", err)
 		}
 	}
@@ -343,11 +344,11 @@ func TestMessageRepository_GetByRoom_IsolatedByRoom(t *testing.T) {
 	r2 := createRoom(t, "room2")
 	repo := NewMessageRepository(testDB)
 
-	_ = repo.Create(&Message{Content: []byte("in r1"), SenderID: u.ID, RoomID: r1.ID})
-	_ = repo.Create(&Message{Content: []byte("in r2"), SenderID: u.ID, RoomID: r2.ID})
+	_ = repo.Create(&domain.Message{Content: "in r1", SenderID: u.ID, RoomID: r1.ID})
+	_ = repo.Create(&domain.Message{Content: "in r2", SenderID: u.ID, RoomID: r2.ID})
 
 	msgs, _ := repo.GetByRoom(r1.ID, 10, 0)
-	if len(msgs) != 1 || string(msgs[0].Content) != "in r1" {
+	if len(msgs) != 1 || msgs[0].Content != "in r1" {
 		t.Errorf("room isolation failed: got %+v", msgs)
 	}
 }
