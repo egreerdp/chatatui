@@ -21,7 +21,7 @@ graph LR
         subgraph "API (internal/server/api)"
             WS[ws_handler.go]
             ME[me_handler.go]
-            FED_R[federation/*_handler.go]
+            FED_R["federation/*_handler.go"]
             ADMIN_H[federation/admin_handler.go]
         end
 
@@ -146,30 +146,30 @@ flowchart TB
 
     START([TUI dials server-b<br/>with federation headers])
 
-    Q1{server-b: is<br/>X-Federated-Identity's domain<br/>== my own domain?}
-    REJ1[Reject 403<br/>self-claim guard]:::threat
+    Q1{"server-b: is the<br/>X-Federated-Identity domain<br/>equal to my own domain?"}
+    REJ1["Reject 403<br/>self-claim guard"]:::threat
 
-    Q2{server-b: is<br/>caller's domain in<br/>blocked_domains?}
-    REJ2[Reject 403]:::threat
+    Q2{"server-b: is the<br/>caller domain in<br/>blocked_domains?"}
+    REJ2["Reject 403"]:::threat
 
-    FETCH[Fetch caller's<br/>.well-known via TLS]:::trusted
-    NOTE_TLS[TLS cert pins identity:<br/>only server-a.com can serve<br/>https://server-a.com/.well-known]:::known
+    FETCH["Fetch caller<br/>.well-known via TLS"]:::trusted
+    NOTE_TLS["TLS cert pins identity:<br/>only server-a.com can serve<br/>https://server-a.com/.well-known"]:::known
 
-    POST[POST /federation/verify<br/>over TLS]:::trusted
+    POST["POST /federation/verify<br/>over TLS"]:::trusted
 
-    Q3{server-a: is<br/>server-b's domain<br/>in my blocked_domains?}
-    REJ3[Reject 403]:::threat
+    Q3{"server-a: is the<br/>server-b domain<br/>in my blocked_domains?"}
+    REJ3["Reject 403"]:::threat
 
-    Q4{server-a: rate limit<br/>exceeded for server-b?}
-    REJ4[Reject 429]:::threat
+    Q4{"server-a: rate limit<br/>exceeded for server-b?"}
+    REJ4["Reject 429"]:::threat
 
-    Q5{server-a: does<br/>(user_id + api_key)<br/>match a real user?}
-    REJ5[Reject 403<br/>verified: false]:::threat
+    Q5{"server-a: does the<br/>user_id + api_key pair<br/>match a real user?"}
+    REJ5["Reject 403<br/>verified: false"]:::threat
 
-    PROVEN[server-b now has proof:<br/>1. server-a vouches for alice<br/>2. alice's home is server-a<br/>3. caller domain = server-a]:::proven
+    PROVEN["server-b now has proof:<br/>1. server-a vouches for alice<br/>2. alice home is server-a<br/>3. caller domain = server-a"]:::proven
 
-    Q6{server-b: is<br/>alice@server-a.com<br/>banned from this room?}
-    REJ6[Reject 403]:::threat
+    Q6{"server-b: is<br/>alice@server-a.com<br/>banned from this room?"}
+    REJ6["Reject 403"]:::threat
 
     JOIN([Join room as<br/>federated member]):::known
 
@@ -223,7 +223,7 @@ flowchart LR
         WORKER --> CALL[FederationClient<br/>.FetchRooms domain]
         CALL --> OK{2xx?}
         OK -->|no| RETRY[leave rooms_fetched_at<br/>untouched]
-        RETRY --> DEAD{>= 7d<br/>since last success?}
+        RETRY --> DEAD{"7+ days<br/>since last success?"}
         DEAD -->|yes| MARKDEAD[mark peer dead<br/>stop polling]
         DEAD -->|no| WORKER
         OK -->|yes| TX[(BEGIN TX)]
